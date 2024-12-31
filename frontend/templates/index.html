@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain</title>
+    
+    {% comment %} FONTS {% endcomment %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" />
+    <link rel="icon" type="image/svg+xml" href="{% static "images/blockchain_rp_dark.svg" %}" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="{% static "css/index.css" %}" />
+</head>     
+<body>
+    <div id="main">
+        <div id="app"></div>
+    </div>
+    <script src="{% static "frontend/main.js" %}"></script>
+</body>
+</html>
