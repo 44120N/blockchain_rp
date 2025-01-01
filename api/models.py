@@ -1,3 +1,4 @@
+from typing import *
 from django.db import models
 import hashlib, struct
 from datetime import datetime
@@ -51,9 +52,8 @@ class BlockHeader(models.Model):
     
     def __init__(self, *args, **kwargs):
         super(BlockHeader, self).__init__(*args, **kwargs)
-        if self.timestamp is None:
-            current_time = datetime.now()
-            self.timestamp = little_endian_to_int(datetime_to_little_endian_bytes(current_time))
+        if not self.timestamp:
+            self.timestamp = little_endian_to_int(datetime_to_little_endian_bytes(datetime.now()))
 
     def save(self, *args, **kwargs):        
         if isinstance(self.version, int):
@@ -81,15 +81,18 @@ class BlockHeader(models.Model):
     
     def bits_to_target(self, bits: str) -> bytes:
         """Convert the compact bits representation to the full target in bytes."""
-        exponent = int(bits[:2], 16)
-        coefficient = int(bits[2:], 16)
+        if len(bits) != 8:
+            raise ValueError("Bits must be exactly 8 characters long.")
+        try:
+            exponent = int(bits[:2], 16)
+            coefficient = int(bits[2:], 16)
+        except ValueError:
+            raise ValueError("Bits must be a valid hexadecimal string.")
         target = coefficient * (2 ** (8 * (exponent - 3)))
-        
         return target.to_bytes(32, byteorder='big')
     
-    def mine(self):
+    def mine(self, target):
         """Performs mining by finding a valid nonce such that the block hash is less than the target."""
-        target_bytes = self.bits_to_target(self.bits)
         while True:
             header = (
                 int_to_little_endian(self.timestamp) +
@@ -101,7 +104,7 @@ class BlockHeader(models.Model):
             )
             
             hash_result = sha256(sha256(header))
-            if hash_result[::-1] < target_bytes:
+            if hash_result[::-1] < target:
                 self.block_hash = natural_byte_order_to_str(hash_result)
                 break
             
@@ -111,22 +114,51 @@ class BlockHeader(models.Model):
         
         self.save()
 
+class Blockchain(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255, default="Blockchain", null=False, blank=False, unique=True)
+    target = models.CharField(max_length=255, default="0")
+    
+    def get_chain(self):
+        """Retrieve the ordered chain of blocks."""
+        return self.block_set.order_by('height')
+
+    def validate_chain(self):
+        """Validate the blockchain by checking hashes and connections."""
+        chain:List[Block] = self.get_chain()
+        previous_hash = natural_byte_order_to_str(DEFAULT_HASH)
+        for block in chain:
+            if block.header.previous_hash != previous_hash:
+                return False
+            header_data = (
+                int_to_little_endian(block.header.timestamp) +
+                str_to_natural_byte_order(block.header.version) +
+                str_to_natural_byte_order(block.header.bits) +
+                str_to_natural_byte_order(block.header.nonce) +
+                str_to_natural_byte_order(block.header.previous_hash) +
+                str_to_natural_byte_order(block.header.merkle_root)
+            )
+            hash_result = sha256(sha256(header_data))
+            target = block.header.bits_to_target(block.header.bits)
+            if hash_result[::-1] >= target:
+                return False 
+            previous_hash = block.header.block_hash
+        return True
+
 class Block(models.Model):
     id = models.AutoField(primary_key=True)
-    index = models.IntegerField(default=0, null=False, blank=False)
-    block_size = models.IntegerField(default=0, null=False, blank=False)
-    block_header = models.ForeignKey(BlockHeader, on_delete=models.CASCADE)
+    height = models.IntegerField(default=0, null=False, blank=False, db_index=True)
+    blockchain = models.ForeignKey(Blockchain, on_delete=models.CASCADE)
+    size = models.IntegerField(default=0, null=False, blank=False)
+    header = models.ForeignKey(BlockHeader, on_delete=models.CASCADE)
     data = models.TextField(default='', null=False)
     
     def save(self, *args, **kwargs):
-        self.block_size = len(self.data)
+        self.size = len(self.data)
+        if self.height == 0:
+            self.header.previous_hash = natural_byte_order_to_str(DEFAULT_HASH)
+        elif not self.header.previous_hash:
+            prev_block = Block.objects.filter(blockchain=self.blockchain).order_by('-height').first()
+            self.header.previous_hash = prev_block.header.block_hash if prev_block else natural_byte_order_to_str(DEFAULT_HASH)
+        self.header.save()
         super(Block, self).save(*args, **kwargs)
-
-class Blockchain(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255, default="Blockchain", null=False, blank=False)
-    chain = models.ManyToManyField(Block)
-    target = models.CharField(max_length=255, default="0")
-    
-    def consensus(self, *args, **kwargs):
-        pass
