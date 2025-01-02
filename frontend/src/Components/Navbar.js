@@ -62,8 +62,8 @@ function Navbar(props) {
                             <MenuIcon />
                         </IconButton>
                         <IconButton color='inherit' sx={{ borderRadius: 0, display: { xs: 'none', sm: 'block' } }}>
-                            <Icon style={{height: '8vh', width: '100%', display: 'flex', justifyContent: 'flex-start', alignItems: 'center', flexGrow: 1}}>
-                                <img className='icon' src="/static/images/blockchain_rp.svg" alt="logo" style={{maxHeight: "8vh"}}/>
+                            <Icon style={{height: '5vh', width: '100%', display: 'flex', justifyContent: 'flex-start', alignItems: 'center', flexGrow: 1}}>
+                                <img className='icon' src="/static/images/blockchain_rp.svg" alt="logo" style={{maxHeight: "5vh"}}/>
                             </Icon>
                         </IconButton>
                         <Box sx={{ display: { xs: 'none', sm: 'flex' }, gap: {sm: 2, md: 3, lg: 4, xl: 5}}}>
