@@ -37,7 +37,7 @@ export default function Login() {
     }
 
 
-    async function handleSubmit() {
+    async function handleSubmit(e) {
         e.preventDefault();
         const csrftoken = getCookie('csrftoken');
 
@@ -77,35 +77,33 @@ export default function Login() {
                                     onChange={(e) => setUsername(e.target.value)} required />
                             </Stack>
                             <Stack>
-                                <FormControl sx={{ width: '100%' }} variant="outlined" required>
-                                    <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
-                                    <OutlinedInput
-                                        id="outlined-adornment-password"
-                                        type={showPassword ? 'text' : 'password'}
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        endAdornment={
-                                            <InputAdornment position="end">
-                                                <IconButton
-                                                    aria-label={
-                                                        showPassword ? 'hide the password' : 'display the password'
-                                                    }
-                                                    onClick={handleClickShowPassword}
-                                                    onMouseDown={handleMouseDownPassword}
-                                                    onMouseUp={handleMouseUpPassword}
-                                                    edge="end"
-                                                >
-                                                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                                                </IconButton>
-                                            </InputAdornment>
-                                        }
-                                        label="Password"
-                                    />
-                                </FormControl>
+                                <TextField
+                                    required
+                                    id="outlined-adornment-password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    endAdornment={
+                                        <InputAdornment position="end">
+                                            <IconButton
+                                                aria-label={
+                                                    showPassword ? 'hide the password' : 'display the password'
+                                                }
+                                                onClick={handleClickShowPassword}
+                                                onMouseDown={handleMouseDownPassword}
+                                                onMouseUp={handleMouseUpPassword}
+                                                edge="end"
+                                            >
+                                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    }
+                                    label="Password"
+                                />
                             </Stack>
                             <Stack>
                                 <Stack sx={{ display: "block", alignSelf: "end" }}>
-                                    <Button variant="contained" type="submit" align="end" onClick={handleSubmit}>Submit</Button>
+                                    <Button variant="contained" type="submit" align="end" onClick={handleSubmit}>Login</Button>
                                 </Stack>
                             </Stack>
                         </Stack>
