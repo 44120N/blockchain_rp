@@ -24,9 +24,9 @@ class BlockHeader(models.Model):
         null=False, blank=False, 
         default=natural_byte_order_to_str(int_to_little_endian(0x00000000))
     )
-    nonce = models.TextField(
+    nonce = models.IntegerField(
         null=False, blank=False, 
-        default=natural_byte_order_to_str(int_to_little_endian(0x00000000))
+        default=0
     )
     previous_hash = models.TextField(
         default=natural_byte_order_to_str(DEFAULT_HASH), 
