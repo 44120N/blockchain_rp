@@ -5,12 +5,14 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./Components/Navbar";
 import Home from "./Pages/Home";
 import Footer from "./Components/Footer";
+import Login from "./Pages/Login";
 
 export default function App() {
     return (
         <Router>
             <Routes>
                 <Route exact path="/" Component={Home} />
+                <Route path="/login" Component={Login} />
             </Routes>
         </Router>
     );
