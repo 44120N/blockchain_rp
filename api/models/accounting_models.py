@@ -14,7 +14,7 @@ ACCOUNT_TYPES = [
 
 class Account(models.Model):
     id = models.IntegerField(primary_key=True)
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     type = models.CharField(max_length=20, choices=ACCOUNT_TYPES, default="undefined")
     
     def __str__(self):

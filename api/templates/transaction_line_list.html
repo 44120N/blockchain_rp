@@ -1,0 +1,19 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+    <h1>Transaction Lines for {{ transaction.description }}</h1>
+    <ul>
+        {% for transaction_line in transaction_lines %}
+            <li>
+                {{ transaction_line.account }}: IDR {{ transaction_line.value }} <!-- Replace 'description' with an actual field from the TransactionLine model -->
+                <form action="{% url 'delete_transaction_line' pk=transaction_line.pk %}" method="POST" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+                <a href="{% url 'update_transaction_line' pk=transaction_line.pk %}" class="btn btn-secondary">Edit</a>
+            </li>
+        {% endfor %}
+    </ul>
+    <p>Status: {% if transaction.is_balanced %} Balance {% else %} Not Balance {% endif %}</p>
+    <a href="{% url 'create_transaction_line' transaction_id=transaction.id %}" class="btn btn-primary">Create New Transaction Line</a>
+{% endblock %}

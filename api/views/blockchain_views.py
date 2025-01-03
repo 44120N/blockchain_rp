@@ -12,7 +12,6 @@ from ..serializers import *
 import json
 
 # Create your views here.
-# Blockchain
 def mine_block(blockchain: Blockchain, journal: GeneralJournal) -> Block:
     """
     Mines a new block for the given blockchain using the provided general journal.
