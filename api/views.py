@@ -1,129 +1,85 @@
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 from django.http import JsonResponse, HttpResponseBadRequest
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import BlockHeader, Block, Blockchain
-from .serializers import *
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
+
+from .models import BlockHeader, Block, Blockchain, ChainUser
+from .forms import LoginForm, SignUpForm
+from .serializers import *
 import json
 
 # Create your views here.
-class BlockHeaderAPI(APIView):
-    def get(self, request, block_hash=None):
-        if block_hash:
-            block_header = get_object_or_404(BlockHeader, block_hash=block_hash)
-            serializer = BlockHeaderSerializer(block_header)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        block_headers = BlockHeader.objects.all()
-        serializer = BlockHeaderSerializer(block_headers, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+def user_login(request):
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            password = form.cleaned_data['password']
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                return redirect('dashboard')
+            else:
+                return render(request, 'login.html', {'form': form, 'error': 'Invalid credentials'})
+    else:
+        form = LoginForm()
+    return render(request, 'login.html', {'form': form})
 
-    def post(self, request):
-        serializer = BlockHeaderSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+def user_signup(request):
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            blockchain = Blockchain.objects.create()
+            chain_user = ChainUser.objects.create(user=user, blockchain=blockchain)
+            private_key, public_key = chain_user.generate_keys()
+            request.session['private_key'] = private_key
+            login(request, user)
+            return redirect('dashboard')
+    else:
+        form = SignUpForm()
+    return render(request, 'signup.html', {'form': form})
 
-    def delete(self, request, block_hash):
-        block_header = get_object_or_404(BlockHeader, block_hash=block_hash)
-        block_header.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+@login_required
+def user_logout(request):
+    logout(request)
+    return redirect('login')
 
-class BlockAPI(APIView):
-    def get(self, request, block_id=None):
-        if block_id:
-            block = get_object_or_404(Block, pk=block_id)
-            data = {
-                "id": block.id,
-                "height": block.height,
-                "blockchain": block.blockchain.id,
-                "size": block.size,
-                "header": block.header.block_hash,
-                "data": block.data,
-            }
-            return Response(data, status=status.HTTP_200_OK)
-        
-        blocks = Block.objects.all()
-        data = [
-            {
-                "id": block.id,
-                "height": block.height,
-                "blockchain": block.blockchain.id,
-                "size": block.size,
-                "header": block.header.block_hash,
-                "data": block.data,
-            }
-            for block in blocks
-        ]
-        return Response(data, status=status.HTTP_200_OK)
-
-    def post(self, request):
-        pass
-
-    def delete(self, request, block_id):
-        block = get_object_or_404(Block, pk=block_id)
-        block.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-class BlockchainAPI(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, blockchain_id=None):
-        if blockchain_id:
-            blockchain = get_object_or_404(Blockchain, id=blockchain_id)
-            return Response({
-                "id": blockchain.id,
-                "user": blockchain.user.username,
-                "created_at": blockchain.created_at,
-                "block_count": blockchain.blocks.count(),
-                "blocks": [
-                    {
-                        "id": block.id,
-                        "height": block.height,
-                        "data": block.data,
-                        "timestamp": block.timestamp,
-                        "hash": block.header.block_hash if block.header else None,
-                    }
-                    for block in blockchain.blocks.all()
-                ]
-            })
-
-        blockchains = Blockchain.objects.filter(user=request.user)
-        return Response([
-            {
-                "id": blockchain.id,
-                "name": blockchain.name,
-                "created_at": blockchain.created_at,
-                "block_count": blockchain.blocks.count(),
-            }
-            for blockchain in blockchains
-        ])
-
-    def post(self, request):
-        name = request.data.get('name', None)
-
-        if not name:
-            return Response({"error": "Name is required."}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if Blockchain.objects.filter(user=request.user).exists():
-            return Response(
-                {"error": "A blockchain already exists for this user."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        blockchain = Blockchain.objects.create(user=request.user, name=name)
-        return Response({
-            "message": "Blockchain created successfully.",
-            "id": blockchain.id,
-            "name": blockchain.name,
-            "created_at": blockchain.created_at,
-        }, status=status.HTTP_201_CREATED)
+@login_required
+def dashboard(request):
+    user = request.user
+    try:
+        chain_user = ChainUser.objects.get(user=user)
+        blockchain_id = chain_user.blockchain.id if chain_user.blockchain else "No Blockchain"
+        context = {
+            'username': user.username,
+            'email': user.email,
+            'user_id': user.id,
+            'public_key': chain_user.public_key,
+            'blockchain_id': blockchain_id,
+        }
+    except ChainUser.DoesNotExist:
+        context = {
+            'username': user.username,
+            'email': user.email,
+            'user_id': user.id,
+            'public_key': "No public key available",
+            'blockchain_id': "No Blockchain",
+        }
+    
+    private_key = request.session.pop('private_key', None)
+    if private_key:
+        context['private_key'] = private_key
+    return render(request, 'dashboard.html', context)
 
 # Blockchain Actions
 def mine_block(blockchain, data: str):
@@ -143,7 +99,7 @@ def mine_block(blockchain, data: str):
 
 class MineAPI(APIView):
     permission_classes = [IsAuthenticated]
-
+    
     def post(self, request):
         blockchain = get_object_or_404(Blockchain, user=request.user)
         
@@ -164,11 +120,11 @@ class MineAPI(APIView):
 
 class ValidateChainAPI(APIView):
     permission_classes = [IsAuthenticated]
-
+    
     def get(self, request, blockchain_id):
         blockchain = get_object_or_404(Blockchain, pk=blockchain_id)
         is_valid = blockchain.validate_chain()
-
+        
         if is_valid:
             return Response({"message": "Blockchain is valid."}, status=status.HTTP_200_OK)
         else:
@@ -176,31 +132,29 @@ class ValidateChainAPI(APIView):
 
 class ConsensusAPI(APIView):
     permission_classes = [IsAuthenticated]
-
+    
     def post(self, request):
         user_blockchain = get_object_or_404(Blockchain, user=request.user)
-
         all_blockchains = Blockchain.objects.all()
         longest_chain = None
         max_length = 0
-
+        
         for blockchain in all_blockchains:
             if blockchain.validate_chain():
                 chain_length = blockchain.blocks.count()
                 if chain_length > max_length:
                     max_length = chain_length
                     longest_chain = blockchain
-
+        
         if not longest_chain:
             return Response(
                 {"error": "No valid chains found in the network."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
+        
         if user_blockchain != longest_chain:
             with transaction.atomic():
                 user_blockchain.blocks.all().delete()
-
                 for block in longest_chain.blocks.all():
                     Block.objects.create(
                         blockchain=user_blockchain,
@@ -210,7 +164,7 @@ class ConsensusAPI(APIView):
                         timestamp=block.timestamp,
                         size=block.size,
                     )
-
+            
             return Response(
                 {
                     "message": "Blockchain updated to the longest chain.",
@@ -219,7 +173,7 @@ class ConsensusAPI(APIView):
                 },
                 status=status.HTTP_200_OK,
             )
-
+        
         return Response(
             {"message": "Your blockchain is already the longest chain."},
             status=status.HTTP_200_OK,
