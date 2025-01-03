@@ -1,0 +1,12 @@
+<!-- update_general_journal.html -->
+{% extends "base_generic.html" %}
+
+{% block content %}
+    <h1>Update General Journal</h1>
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}  <!-- Renders the form fields -->
+        <button type="submit" class="btn btn-primary">Save changes</button>
+    </form>
+    <a href="{% url 'journal_list' %}" class="btn btn-secondary">Cancel</a>
+{% endblock %}
