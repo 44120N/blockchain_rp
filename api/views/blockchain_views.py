@@ -1,121 +1,79 @@
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import csrf_exempt
-from django.db import transaction
-from django.http import JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from django.db import transaction
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 
-from .models import BlockHeader, Block, Blockchain, ChainUser
-from .forms import LoginForm, SignUpForm
-from .serializers import *
+from ..models import BlockHeader, Block, Blockchain, ChainUser, GeneralJournal, Transaction, TransactionLine, Account
+from ..serializers import *
 import json
 
 # Create your views here.
-def user_login(request):
-    if request.method == 'POST':
-        form = LoginForm(request.POST)
-        if form.is_valid():
-            username = form.cleaned_data['username']
-            password = form.cleaned_data['password']
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-                return redirect('dashboard')
-            else:
-                return render(request, 'login.html', {'form': form, 'error': 'Invalid credentials'})
-    else:
-        form = LoginForm()
-    return render(request, 'login.html', {'form': form})
+# Blockchain
+def mine_block(blockchain: Blockchain, journal: GeneralJournal) -> Block:
+    """
+    Mines a new block for the given blockchain using the provided general journal.
 
-def user_signup(request):
-    if request.method == 'POST':
-        form = SignUpForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            blockchain = Blockchain.objects.create()
-            chain_user = ChainUser.objects.create(user=user, blockchain=blockchain)
-            private_key, public_key = chain_user.generate_keys()
-            request.session['private_key'] = private_key
-            login(request, user)
-            return redirect('dashboard')
-    else:
-        form = SignUpForm()
-    return render(request, 'signup.html', {'form': form})
+    Args:
+        blockchain (Blockchain): The blockchain to which the block will be added.
+        journal (GeneralJournal): The general journal whose transactions will be included in the block.
 
-@login_required
-def user_logout(request):
-    logout(request)
-    return redirect('login')
-
-@login_required
-def dashboard(request):
-    user = request.user
-    try:
-        chain_user = ChainUser.objects.get(user=user)
-        blockchain_id = chain_user.blockchain.id if chain_user.blockchain else "No Blockchain"
-        context = {
-            'username': user.username,
-            'email': user.email,
-            'user_id': user.id,
-            'public_key': chain_user.public_key,
-            'blockchain_id': blockchain_id,
-        }
-    except ChainUser.DoesNotExist:
-        context = {
-            'username': user.username,
-            'email': user.email,
-            'user_id': user.id,
-            'public_key': "No public key available",
-            'blockchain_id': "No Blockchain",
-        }
+    Returns:
+        Block: The mined block.
+    """
     
-    private_key = request.session.pop('private_key', None)
-    if private_key:
-        context['private_key'] = private_key
-    return render(request, 'dashboard.html', context)
-
-# Blockchain Actions
-def mine_block(blockchain, data: str):
-    target = int(blockchain.target, 16).to_bytes(32, byteorder='big') 
+    full_target = int(blockchain.target, 16).to_bytes(32, byteorder="big")
     block_header = BlockHeader()
-    block_header.save()
     
     previous_block = blockchain.blocks.last()
+    if previous_block:
+        block_header.previous_hash = previous_block.header.block_hash
+    block_header.bits = BlockHeader.target_to_bits(full_target)
+    block_header.save()
+
     new_block = Block(
         blockchain=blockchain,
         height=(previous_block.height + 1 if previous_block else 0),
-        header=block_header,
-        data=data,
+        header=block_header
     )
-    new_block.header.mine(target)
+    new_block.set_general_journal(journal)
+    new_block.header.mine(full_target)
+    new_block.save()
     return new_block
 
 class MineAPI(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     def post(self, request):
-        blockchain = get_object_or_404(Blockchain, user=request.user)
+        chain_user = request.user.chain_user
+        blockchain = chain_user.blockchain
+        if not blockchain:
+            return Response({"error": "No blockchain associated with this user."}, status=400)
         
         try:
-            data = json.loads(request.body).get('data', 'No data provided')
+            body = json.loads(request.body)
+            journal_id = body.get("journal_id")
+            if not journal_id:
+                raise ValidationError("journal_id is required.")
         except json.JSONDecodeError:
-            raise ValidationError("Invalid JSON format")
+            raise ValidationError("Invalid JSON format.")
         
-        new_block = mine_block(blockchain, data)
-        new_block.save()
+        journal = get_object_or_404(GeneralJournal, id=journal_id)
+        try:
+            new_block = mine_block(blockchain, journal)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=400)
         
         return Response({
             "message": "Block mined successfully",
             "block_height": new_block.height,
             "block_hash": new_block.header.block_hash,
             "block_nonce": new_block.header.nonce,
+            "merkle_root": new_block.header.merkle_root,
+            "block_data": json.loads(new_block.data)
         })
 
 class ValidateChainAPI(APIView):
