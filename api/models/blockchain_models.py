@@ -86,13 +86,26 @@ class BlockHeader(models.Model):
         """Convert the compact bits representation to the full target in bytes."""
         if len(bits) != 8:
             raise ValueError("Bits must be exactly 8 characters long.")
-        try:
-            exponent = int(bits[:2], 16)
-            coefficient = int(bits[2:], 16)
-        except ValueError:
-            raise ValueError("Bits must be a valid hexadecimal string.")
+        exponent = int(bits[:2], 16)
+        coefficient = int(bits[2:], 16)
         target = coefficient * (2 ** (8 * (exponent - 3)))
         return target.to_bytes(32, byteorder='big')
+    
+    def target_to_bits(target: bytes) -> str:
+        """Convert the full target to its compact bits representation."""
+        target_int = int.from_bytes(target, byteorder="big")
+        hex_target = f"{target_int:064x}"
+
+        first_non_zero = next((i for i, c in enumerate(hex_target) if c != "0"), len(hex_target))
+        coefficient = int(hex_target[first_non_zero:first_non_zero + 6], 16)
+        exponent = (len(hex_target) - first_non_zero + 2) // 2
+
+        if coefficient > 0x7fffff:
+            coefficient >>= 8
+            exponent += 1
+        bits = f"{exponent:02x}{coefficient:06x}"
+        return bits
+
     
     def mine(self, target):
         """Performs mining by finding a valid nonce such that the block hash is less than the target."""
