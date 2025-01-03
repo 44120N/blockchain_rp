@@ -63,61 +63,52 @@ export default function Login() {
         }
     }
 
-    // function handleChange(e) {
-    //     setFormData({ ...formData, [e.target.name]: e.target.value });
-    // }
-
     return (
         <>
-
-            <Container fixed>
+            <Container fixed sx={{ my: 3 }}>
                 <Stack gap={2}>
                     <Stack>
-
                         <Typography variant="h3">Login</Typography>
                     </Stack>
                     <Stack>
-
-                        <form onSubmit={handleSubmit}>
-                            <Stack gap={1}>
-                                <Stack>
-                                    <TextField label="Username" value={username}
-                                        onChange={(e) => setUsername(e.target.value)} required />
-                                </Stack>
-                                <Stack>
-                                    <FormControl sx={{ width: '100%' }} variant="outlined" required>
-                                        <InputLabel htmlFor="outlined-adornment-password" >Password</InputLabel>
-                                        <OutlinedInput
-                                            id="outlined-adornment-password"
-                                            type={showPassword ? 'text' : 'password'}
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            endAdornment={
-                                                <InputAdornment position="end">
-                                                    <IconButton
-                                                        aria-label={
-                                                            showPassword ? 'hide the password' : 'display the password'
-                                                        }
-                                                        onClick={handleClickShowPassword}
-                                                        onMouseDown={handleMouseDownPassword}
-                                                        onMouseUp={handleMouseUpPassword}
-                                                        edge="end"
-                                                    >
-                                                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                                                    </IconButton>
-                                                </InputAdornment>
-                                            }
-                                            label="Password"
-                                        />
-                                    </FormControl>
-                                </Stack>
-                                <Stack>
-                                    <Stack sx={{ display: "block", alignSelf: "end" }}>
-                                        <Button variant="contained" type="submit" align="end">Submit</Button>
-                                    </Stack>
+                        <Stack gap={1}>
+                            <Stack>
+                                <TextField label="Username" value={username}
+                                    onChange={(e) => setUsername(e.target.value)} required />
+                            </Stack>
+                            <Stack>
+                                <FormControl sx={{ width: '100%' }} variant="outlined" required>
+                                    <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
+                                    <OutlinedInput
+                                        id="outlined-adornment-password"
+                                        type={showPassword ? 'text' : 'password'}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        endAdornment={
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    aria-label={
+                                                        showPassword ? 'hide the password' : 'display the password'
+                                                    }
+                                                    onClick={handleClickShowPassword}
+                                                    onMouseDown={handleMouseDownPassword}
+                                                    onMouseUp={handleMouseUpPassword}
+                                                    edge="end"
+                                                >
+                                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        }
+                                        label="Password"
+                                    />
+                                </FormControl>
+                            </Stack>
+                            <Stack>
+                                <Stack sx={{ display: "block", alignSelf: "end" }}>
+                                    <Button variant="contained" type="submit" align="end" onClick={handleSubmit}>Submit</Button>
                                 </Stack>
                             </Stack>
-                        </form>
+                        </Stack>
                     </Stack>
                 </Stack>
             </Container>

@@ -6,6 +6,7 @@ import Navbar from "./Components/Navbar";
 import Home from "./Pages/Home";
 import Footer from "./Components/Footer";
 import Login from "./Pages/Login";
+import SignUp from "./Pages/Signup";
 
 export default function App() {
     return (
@@ -13,6 +14,7 @@ export default function App() {
             <Routes>
                 <Route exact path="/" Component={Home} />
                 <Route path="/login" Component={Login} />
+                <Route path="/signup" Component={SignUp} />
             </Routes>
         </Router>
     );
