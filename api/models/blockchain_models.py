@@ -7,9 +7,9 @@ from .accounting_models import GeneralJournal
 
 from django.db import models
 from django.contrib.auth.models import User
-from django.core.serializers import serialize
 from rest_framework.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 DEFAULT_HASH = b'\x00'*32
 
@@ -22,11 +22,15 @@ class BlockHeader(models.Model):
     )
     bits = models.TextField(
         null=False, blank=False, 
-        default=natural_byte_order_to_str(int_to_little_endian(0x00000000))
+        default="1d00ffff"
     )
     nonce = models.IntegerField(
         null=False, blank=False, 
-        default=0
+        default=0,
+        validators=[
+            MaxValueValidator(0xFFFFFFFF),
+            MinValueValidator(0)
+        ]
     )
     previous_hash = models.TextField(
         default=natural_byte_order_to_str(DEFAULT_HASH), 
@@ -70,16 +74,23 @@ class BlockHeader(models.Model):
             self.merkle_root = natural_byte_order_to_str(str_to_natural_byte_order(self.merkle_root))
         
         return (
-            int_to_little_endian(self.timestamp) +
             str_to_natural_byte_order(self.version) +
-            str_to_natural_byte_order(self.bits) +
-            str_to_natural_byte_order(self.nonce) +
             str_to_natural_byte_order(self.previous_hash) +
-            str_to_natural_byte_order(self.merkle_root)
+            str_to_natural_byte_order(self.merkle_root) +
+            int_to_little_endian(self.timestamp) +
+            str_to_natural_byte_order(self.bits) +
+            int_to_little_endian(self.nonce)
         )
     
+    def compute_block_hash(self) -> str:
+        """Compute the block hash as the double SHA-256 of the header."""
+        header = self._header_data()
+        hash1 = sha256(header)
+        hash2 = sha256(hash1)
+        return natural_byte_order_to_str(hash2)
+    
     def save(self, *args, **kwargs):
-        self.block_hash = natural_byte_order_to_str(sha256(self._header_data()))
+        self.block_hash = self.compute_block_hash()
         super(BlockHeader, self).save(*args, **kwargs)
     
     def bits_to_target(self, bits: str) -> bytes:
@@ -91,15 +102,14 @@ class BlockHeader(models.Model):
         target = coefficient * (2 ** (8 * (exponent - 3)))
         return target.to_bytes(32, byteorder='big')
     
+    @staticmethod
     def target_to_bits(target: bytes) -> str:
         """Convert the full target to its compact bits representation."""
         target_int = int.from_bytes(target, byteorder="big")
         hex_target = f"{target_int:064x}"
-
         first_non_zero = next((i for i, c in enumerate(hex_target) if c != "0"), len(hex_target))
         coefficient = int(hex_target[first_non_zero:first_non_zero + 6], 16)
         exponent = (len(hex_target) - first_non_zero + 2) // 2
-
         if coefficient > 0x7fffff:
             coefficient >>= 8
             exponent += 1
@@ -108,22 +118,20 @@ class BlockHeader(models.Model):
 
     
     def mine(self, target):
-        """Performs mining by finding a valid nonce such that the block hash is less than the target."""
+        """Mine the block by finding a nonce that produces a hash below the target."""
+        target_bytes = int.from_bytes(target, byteorder="big")
         while True:
-            hash_result = sha256(sha256(self._header_data()))
-            if hash_result[::-1] < target:
-                self.block_hash = natural_byte_order_to_str(hash_result)
+            self.block_hash = self.compute_block_hash()
+            if int(self.block_hash, 16) < target_bytes:
                 break
-            
-            nonce_int = little_endian_to_int(str_to_natural_byte_order(self.nonce))
-            nonce_int += 1
-            self.nonce = natural_byte_order_to_str(int_to_little_endian(nonce_int))
-        
+            self.nonce += 1
+            if self.nonce > 0xFFFFFFFF:
+                raise ValueError("Nonce overflow: No valid hash found.")
         self.save()
 
 class Blockchain(models.Model):
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
-    target = models.CharField(max_length=64, default="0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+    target = models.TextField(default="0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
@@ -148,6 +156,26 @@ class Blockchain(models.Model):
                 raise ValueError(f"Block {block.height} does not meet the proof-of-work requirement.")
             previous_hash = block.header.block_hash
         return True
+    
+    def create_genesis_block(self):
+        """Initialize the blockchain with a genesis block."""
+        genesis_header = BlockHeader(
+            version="01000000",
+            previous_hash="00" * 32,
+            merkle_root="3ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4a",
+            timestamp=int(datetime.now().timestamp()),
+            bits=self.target,
+            nonce=0
+        )
+        genesis_header.save()
+
+        genesis_block = Block(
+            blockchain=self,
+            height=0,
+            header=genesis_header,
+            data=json.dumps({"message": "Genesis Block"})
+        )
+        genesis_block.save()
 
 class Block(models.Model):
     id = models.CharField(max_length=255, primary_key=True, editable=False)
@@ -163,6 +191,9 @@ class Block(models.Model):
     def set_general_journal(self, journal: GeneralJournal):
         """Serialize GeneralJournal's transactions and compute Merkle Root."""
         transactions = journal.transactions.all()
+        if not transactions.exists():
+            raise ValueError("GeneralJournal must have at least one transaction.")
+        
         txids = [tx.txid for tx in transactions]
         self.header.merkle_root = compute_merkle_root(txids)
         
@@ -201,8 +232,8 @@ class Block(models.Model):
 class ChainUser(models.Model):
     user = models.OneToOneField(User, unique=True, on_delete=models.CASCADE, related_name="chain_user")
     blockchain = models.ForeignKey(Blockchain, null=True, blank=True, on_delete=models.SET_NULL, related_name="user")
-    public_key = models.TextField()
-    private_key = models.TextField()
+    public_key = models.TextField(null=True, blank=True)
+    private_key = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"Keys for Blockchain {self.blockchain.id}"
