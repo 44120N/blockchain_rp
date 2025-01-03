@@ -3,13 +3,11 @@ import { Container, Stack, Typography, TextField, FormControl, InputLabel, Outli
 import Visibility from "@mui/icons-material/Visibility"
 import VisibilityOff from "@mui/icons-material/VisibilityOff"
 import { useState } from "react";
-
+import axios from "axios"
 
 export default function Login() {
-    const [formData, setFormData] = useState({
-        username: "",
-        password: ""
-    })
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
 
     const handleClickShowPassword = () => setShowPassword((show) => !show);
@@ -37,29 +35,37 @@ export default function Login() {
 
         return cookieValue;
     }
-    const csrftoken = getCookie('csrftoken');
+
 
     async function handleSubmit() {
-        // e.preventDefault();
+        e.preventDefault();
+        const csrftoken = getCookie('csrftoken');
 
-
-
-        // try {
-        //     await axios.post(
-        //         "http://localhost:8000/api/submit_contact_form/",
-        //         formData
-        //     );
-        //     alert("Form Submitted");
-        //     setFormData({ username: "", password: "" });
-        // } catch (error) {
-        //     console.error("Error submitting form:", error);
-        //     alert("Error submitting form. Please try again later.");
-        // }
+        try {
+            const response = await axios.post(
+                "/api/login/",
+                { username, password },
+                {
+                    headers: {
+                        "X-CSRFToken": csrftoken,
+                    },
+                }
+            );
+            if (response.data.success) {
+                alert("Form Submitted");
+            }
+            else {
+                alert("Invalid credentials.");
+            }
+        } catch (error) {
+            console.error("Error submitting form:", error);
+            alert("Error submitting form. Please try again later.");
+        }
     }
 
-    function handleChange() {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    }
+    // function handleChange(e) {
+    //     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // }
 
     return (
         <>
@@ -75,7 +81,8 @@ export default function Login() {
                         <form onSubmit={handleSubmit}>
                             <Stack gap={1}>
                                 <Stack>
-                                    <TextField label="Username" name="username" required />
+                                    <TextField label="Username" value={username}
+                                        onChange={(e) => setUsername(e.target.value)} required />
                                 </Stack>
                                 <Stack>
                                     <FormControl sx={{ width: '100%' }} variant="outlined" required>
@@ -83,6 +90,8 @@ export default function Login() {
                                         <OutlinedInput
                                             id="outlined-adornment-password"
                                             type={showPassword ? 'text' : 'password'}
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
                                             endAdornment={
                                                 <InputAdornment position="end">
                                                     <IconButton
@@ -99,7 +108,6 @@ export default function Login() {
                                                 </InputAdornment>
                                             }
                                             label="Password"
-                                            name="password"
                                         />
                                     </FormControl>
                                 </Stack>
