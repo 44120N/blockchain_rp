@@ -8,6 +8,7 @@ import {
     Typography,
     Divider,
     Stack,
+    Button,
 } from "@mui/material";
 
 export default function Home() {
@@ -45,13 +46,16 @@ export default function Home() {
                             }}
                         />
                     </Stack>
-
-                    <Stack>
-                        <Typography>E-mail: {email}</Typography>
-                        <Typography>Blockchain ID: {blockchain}</Typography>
-                        <Typography>Public Key: {publicKey}</Typography>
-                        <Typography>Private Key: {privateKey}</Typography>
-                    </Stack>
+                    {username ?(
+                        <Stack>
+                            <Typography>E-mail: {email}</Typography>
+                            <Typography>Blockchain ID: {blockchain}</Typography>
+                            <Typography>Public Key: {publicKey}</Typography>
+                            <Typography>Private Key: {privateKey}</Typography>
+                        </Stack>
+                    ) : (
+                        <Button href="/login" variant="contained">Login</Button>
+                    )}
                 </Stack>
             </Container>
         </ColorPalette>
