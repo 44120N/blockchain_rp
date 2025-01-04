@@ -19,8 +19,6 @@ import {
     Divider,
     Stack,
 } from "@mui/material";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 
 const columns = [
     { id: 'company', label: 'Company', minWidth: 170 },
