@@ -8,6 +8,7 @@ import {
     Typography,
     Divider,
     Stack,
+    Button,
 } from "@mui/material";
 
 import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
@@ -50,25 +51,16 @@ export default function Home() {
                             }}
                         />
                     </Stack>
-
-                    <Stack>
-                        <Stack direction={"row"} sx={{ alignContent: "center", p: 2, my: 1, bgcolor: "aliceblue", borderRadius: "8px" }} gap={2}>
-                            <AlternateEmailIcon />
-                            <Typography>E-mail: <b>{email}</b></Typography>
+                    {username ?(
+                        <Stack>
+                            <Typography>E-mail: {email}</Typography>
+                            <Typography>Blockchain ID: {blockchain}</Typography>
+                            <Typography>Public Key: {publicKey}</Typography>
+                            <Typography>Private Key: {privateKey}</Typography>
                         </Stack>
-                        <Stack direction={"row"} sx={{ alignContent: "center", p: 2, my: 1, bgcolor: "aliceblue", borderRadius: "8px" }} gap={2}>
-                            <LinkIcon />
-                            <Typography>Blockchain ID: <b>{blockchain}</b></Typography>
-                        </Stack>
-                        <Stack direction={"row"} sx={{ alignContent: "center", p: 2, my: 1, bgcolor: "aliceblue", borderRadius: "8px" }} gap={2}>
-                            <KeyIcon />
-                            <Typography>Public Key: <b>{publicKey}</b></Typography>
-                        </Stack>
-                        <Stack direction={"row"} sx={{ alignContent: "center", p: 2, my: 1, bgcolor: "aliceblue", borderRadius: "8px" }} gap={2}>
-                            <VpnKeyIcon />
-                            <Typography>Private Key: <b>{privateKey}</b></Typography>
-                        </Stack>
-                    </Stack>
+                    ) : (
+                        <Button href="/login" variant="contained">Login</Button>
+                    )}
                 </Stack>
             </Container>
         </ColorPalette>
