@@ -16,7 +16,7 @@ export default function SignUp() {
     const [retypePassword, setRetypePassword] = useState("")
     const [showPassword, setShowPassword] = useState(false);
     const [showRetypePassword, setShowRetypePassword] = useState(false);
-    
+
     const handleClickShowPassword = () => setShowPassword((show) => !show);
     const handleClickShowRetypePassword = () => setShowRetypePassword((show) => !show);
 
@@ -43,7 +43,7 @@ export default function SignUp() {
         formData.append('username', username);
         formData.append('password', password);
         formData.append('email', email);
-    
+
         if (password === retypePassword) {
             axios.post(
                 "/api/signup/",
@@ -54,21 +54,21 @@ export default function SignUp() {
                     },
                 }
             )
-            .then(function(response) {
-                if (response.data) {
-                    saveData('login_data', JSON.stringify(response.data), 60);
-                    redirect('/');
-                }
-            })
-            .catch(function(error) {
-                if (error.response && error.response.data) {
-                    const errors = error.response.data;
-                    alert("Form validation failed:\n" + JSON.stringify(errors));
-                } else {
-                    console.error("Error submitting form:", error);
-                    alert("Error submitting form. Please try again later.");
-                }
-            });
+                .then(function (response) {
+                    if (response.data) {
+                        saveData('login_data', JSON.stringify(response.data), 60);
+                        redirect('/');
+                    }
+                })
+                .catch(function (error) {
+                    if (error.response && error.response.data) {
+                        const errors = error.response.data;
+                        alert("Form validation failed:\n" + JSON.stringify(errors));
+                    } else {
+                        console.error("Error submitting form:", error);
+                        alert("Error submitting form. Please try again later.");
+                    }
+                });
         } else {
             alert("The password does not match.");
         }
@@ -77,38 +77,38 @@ export default function SignUp() {
     return (
         <>
             <Container fixed sx={{ my: 3 }}>
-                <Stack gap={2}>
+                <Stack gap={2} sx={{ bgcolor: "aliceblue", p: 5, borderRadius: "32px" }}>
                     <Stack>
                         <Typography variant="h3">Sign Up</Typography>
                     </Stack>
                     <Stack>
                         <Stack gap={1}>
                             <Stack>
-                                <TextField 
+                                <TextField
                                     label="Username"
                                     value={username}
-                                    onChange={(e) => setUsername(e.target.value)} 
-                                    required 
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    required
                                 />
                             </Stack>
                             <Stack>
-                                <TextField 
-                                    label="Email" 
+                                <TextField
+                                    label="Email"
                                     value={email}
-                                    onChange={(e) => setEmail(e.target.value)} 
-                                    required 
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
                                 />
                             </Stack>
                             <Stack>
-                                <TextField 
-                                    label="Password" 
+                                <TextField
+                                    label="Password"
                                     value={password}
-                                    onChange={(e) => setPassword(e.target.value)} 
-                                    required 
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
                                     type={showPassword ? 'text' : 'password'}
                                     slotProps={{
                                         input: {
-                                            endAdornment:(
+                                            endAdornment: (
                                                 <InputAdornment position="end">
                                                     <IconButton
                                                         aria-label={
@@ -126,15 +126,15 @@ export default function SignUp() {
                                 />
                             </Stack>
                             <Stack>
-                                <TextField 
-                                    label="Confirm Password" 
+                                <TextField
+                                    label="Confirm Password"
                                     value={retypePassword}
-                                    onChange={(e) => setRetypePassword(e.target.value)} 
+                                    onChange={(e) => setRetypePassword(e.target.value)}
                                     required
                                     type={showRetypePassword ? 'text' : 'password'}
                                     slotProps={{
                                         input: {
-                                            endAdornment:(
+                                            endAdornment: (
                                                 <InputAdornment position="end">
                                                     <IconButton
                                                         aria-label={

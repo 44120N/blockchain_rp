@@ -10,6 +10,11 @@ import {
     Stack,
 } from "@mui/material";
 
+import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
+import LinkIcon from '@mui/icons-material/Link';
+import KeyIcon from '@mui/icons-material/Key';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
+
 export default function Home() {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
@@ -33,7 +38,7 @@ export default function Home() {
                 <Stack gap={5}>
                     <Stack>
                         <Typography variant="h2" color="primary">
-                            Welcome, {username ? username: 'Anonymous'}!
+                            Welcome, {username ? username : 'Anonymous'}!
                         </Typography>
                         <Typography variant="h3" color="navy">
                             Dashboard
@@ -47,10 +52,22 @@ export default function Home() {
                     </Stack>
 
                     <Stack>
-                        <Typography>E-mail: {email}</Typography>
-                        <Typography>Blockchain ID: {blockchain}</Typography>
-                        <Typography>Public Key: {publicKey}</Typography>
-                        <Typography>Private Key: {privateKey}</Typography>
+                        <Stack direction={"row"} sx={{ alignContent: "center", p: 2, my: 1, bgcolor: "aliceblue", borderRadius: "8px" }} gap={2}>
+                            <AlternateEmailIcon />
+                            <Typography>E-mail: <b>{email}</b></Typography>
+                        </Stack>
+                        <Stack direction={"row"} sx={{ alignContent: "center", p: 2, my: 1, bgcolor: "aliceblue", borderRadius: "8px" }} gap={2}>
+                            <LinkIcon />
+                            <Typography>Blockchain ID: <b>{blockchain}</b></Typography>
+                        </Stack>
+                        <Stack direction={"row"} sx={{ alignContent: "center", p: 2, my: 1, bgcolor: "aliceblue", borderRadius: "8px" }} gap={2}>
+                            <KeyIcon />
+                            <Typography>Public Key: <b>{publicKey}</b></Typography>
+                        </Stack>
+                        <Stack direction={"row"} sx={{ alignContent: "center", p: 2, my: 1, bgcolor: "aliceblue", borderRadius: "8px" }} gap={2}>
+                            <VpnKeyIcon />
+                            <Typography>Private Key: <b>{privateKey}</b></Typography>
+                        </Stack>
                     </Stack>
                 </Stack>
             </Container>

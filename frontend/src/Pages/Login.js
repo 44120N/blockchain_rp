@@ -49,27 +49,27 @@ export default function Login() {
                 },
             }
         )
-        .then(function(response){
-            if (response.data) {
-                saveData('login_data', JSON.stringify(response.data), 60);
-                redirect('/');
-            }
-        })
-        .catch(function(error) {
-            if (error.response && error.response.data) {
-                const errors = error.response.data;
-                alert("Form validation failed:\n" + JSON.stringify(errors));
-            } else {
-                console.error("Error submitting form:", error);
-                alert("Error submitting form. Please try again later.");
-            }
-        });
+            .then(function (response) {
+                if (response.data) {
+                    saveData('login_data', JSON.stringify(response.data), 60);
+                    redirect('/');
+                }
+            })
+            .catch(function (error) {
+                if (error.response && error.response.data) {
+                    const errors = error.response.data;
+                    alert("Form validation failed:\n" + JSON.stringify(errors));
+                } else {
+                    console.error("Error submitting form:", error);
+                    alert("Error submitting form. Please try again later.");
+                }
+            });
     }
 
     return (
         <>
             <Container fixed sx={{ my: 3 }}>
-                <Stack gap={2}>
+                <Stack gap={2} sx={{ bgcolor: "aliceblue", p: 5, borderRadius: "32px" }}>
                     <Stack>
                         <Typography variant="h3">Login</Typography>
                     </Stack>
@@ -88,7 +88,7 @@ export default function Login() {
                                     onChange={(e) => setPassword(e.target.value)}
                                     slotProps={{
                                         input: {
-                                            endAdornment:(
+                                            endAdornment: (
                                                 <InputAdornment position="end">
                                                     <IconButton
                                                         aria-label={
