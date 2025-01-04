@@ -1,6 +1,6 @@
 from .accounting_views import GeneralJournalAPI, TransactionAPI, TransactionLineAPI, AccountAPI
 from .blockchain_views import MineAPI
-from .utils_views import user_login, user_logout, user_signup, dashboard
+from .utils_views import UserLoginAPI, UserLogoutAPI, UserSignupAPI
 
 __all__ = [
     "GeneralJournalAPI",
@@ -8,10 +8,9 @@ __all__ = [
     "TransactionLineAPI",
     "AccountAPI",
     
-    "user_login",
-    "user_logout",
-    "user_signup",
-    "dashboard",
+    "UserSignupAPI",
+    "UserLoginAPI",
+    "UserLogoutAPI",
     
     "MineAPI",
 ]

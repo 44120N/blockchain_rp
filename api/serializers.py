@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import BlockHeader, Blockchain, Block, ChainUser, TransactionLine, Transaction, GeneralJournal, Account
+from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.models import User
 
 class BlockHeaderSerializer(serializers.ModelSerializer):
     class Meta:
@@ -46,3 +48,22 @@ class GeneralJournalSerializer(serializers.ModelSerializer):
     class Meta:
         model = GeneralJournal
         fields = '__all__'
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=150)
+    password = serializers.CharField(write_only=True)
+
+class SignUpSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+
+    class Meta:
+        model = User
+        fields = ['username', 'password', 'email']
+
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            password=validated_data['password'],
+            email=validated_data['email']
+        )
+        return user

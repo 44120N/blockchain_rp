@@ -4,6 +4,7 @@ import Visibility from "@mui/icons-material/Visibility"
 import VisibilityOff from "@mui/icons-material/VisibilityOff"
 import { useState } from "react";
 import axios from "axios"
+import { Link } from "react-router-dom";
 
 export default function Login() {
     const [username, setUsername] = useState("");
@@ -11,14 +12,6 @@ export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
 
     const handleClickShowPassword = () => setShowPassword((show) => !show);
-
-    const handleMouseDownPassword = (event) => {
-        event.preventDefault();
-    };
-
-    const handleMouseUpPassword = (event) => {
-        event.preventDefault();
-    };
 
     const getCookie = (name) => {
         let cookieValue = null;
@@ -83,27 +76,32 @@ export default function Login() {
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    endAdornment={
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                aria-label={
-                                                    showPassword ? 'hide the password' : 'display the password'
-                                                }
-                                                onClick={handleClickShowPassword}
-                                                onMouseDown={handleMouseDownPassword}
-                                                onMouseUp={handleMouseUpPassword}
-                                                edge="end"
-                                            >
-                                                {showPassword ? <VisibilityOff /> : <Visibility />}
-                                            </IconButton>
-                                        </InputAdornment>
-                                    }
+                                    slotProps={{
+                                        input: {
+                                            endAdornment:(
+                                                <InputAdornment position="end">
+                                                    <IconButton
+                                                        aria-label={
+                                                            showPassword ? 'hide the password' : 'display the password'
+                                                        }
+                                                        onClick={handleClickShowPassword}
+                                                        edge="end"
+                                                    >
+                                                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                    </IconButton>
+                                                </InputAdornment>
+                                            )
+                                        }
+                                    }}
                                     label="Password"
                                 />
                             </Stack>
                             <Stack>
                                 <Stack sx={{ display: "block", alignSelf: "end" }}>
                                     <Button variant="contained" type="submit" align="end" onClick={handleSubmit}>Login</Button>
+                                </Stack>
+                                <Stack direction={'row'}>
+                                    <Typography>Don't have an account? <Link to={'/signup'}>Create Account</Link></Typography>
                                 </Stack>
                             </Stack>
                         </Stack>

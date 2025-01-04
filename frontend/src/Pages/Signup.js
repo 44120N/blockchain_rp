@@ -1,12 +1,23 @@
 import React from "react";
-import { Container, Stack, TextField, Typography, Button } from "@mui/material";
+import axios from "axios";
+import { Container, Stack, TextField, Typography, Button, InputAdornment, IconButton } from "@mui/material";
+import Visibility from "@mui/icons-material/Visibility"
+import VisibilityOff from "@mui/icons-material/VisibilityOff"
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function SignUp() {
+    const redirect = useNavigate();
     const [username, setUsername] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [retypePassword, setRetypePassword] = useState("")
+    const [showPassword, setShowPassword] = useState(false);
+    const [showRetypePassword, setShowRetypePassword] = useState(false);
+    
+    const handleClickShowPassword = () => setShowPassword((show) => !show);
+    const handleClickShowRetypePassword = () => setShowRetypePassword((show) => !show);
 
     const getCookie = (name) => {
         let cookieValue = null;
@@ -24,34 +35,38 @@ export default function SignUp() {
         return cookieValue;
     }
 
-    async function handleSubmit(e) {
+    function handleSubmit(e) {
         e.preventDefault();
         const csrftoken = getCookie('csrftoken');
-
-        try {
-            if (password == retypePassword) {
-                const response = await axios.post(
-                    "/api/login/",
-                    { username, email, password },
-                    {
-                        headers: {
-                            "X-CSRFToken": csrftoken,
-                        },
-                    }
-                );
-                if (response.data.success) {
-                    alert("Form Submitted");
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('password', password);
+        formData.append('email', email);
+    
+        if (password === retypePassword) {
+            axios.post(
+                "/api/signup/",
+                formData,
+                {
+                    headers: {
+                        "X-CSRFToken": csrftoken,
+                    },
                 }
-                else {
-                    alert("Invalid credentials.");
+            )
+            .then(function(response) {
+                redirect('/');
+            })
+            .catch(function(error) {
+                if (error.response && error.response.data) {
+                    const errors = error.response.data;
+                    alert("Form validation failed:\n" + JSON.stringify(errors));
+                } else {
+                    console.error("Error submitting form:", error);
+                    alert("Error submitting form. Please try again later.");
                 }
-            }
-            else {
-                alert("The password is not matching")
-            }
-        } catch (error) {
-            console.error("Error submitting form:", error);
-            alert("Error submitting form. Please try again later.");
+            });
+        } else {
+            alert("The password does not match.");
         }
     }
 
@@ -65,21 +80,80 @@ export default function SignUp() {
                     <Stack>
                         <Stack gap={1}>
                             <Stack>
-                                <TextField label="Username" onChange={(e) => setUsername(e.target.value)} required />
+                                <TextField 
+                                    label="Username"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)} 
+                                    required 
+                                />
                             </Stack>
                             <Stack>
-                                <TextField label="Email" onChange={(e) => setEmail(e.target.value)} required />
+                                <TextField 
+                                    label="Email" 
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)} 
+                                    required 
+                                />
                             </Stack>
                             <Stack>
-                                <TextField label="Password" onChange={(e) => setPassword(e.target.value)} required />
+                                <TextField 
+                                    label="Password" 
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)} 
+                                    required 
+                                    type={showPassword ? 'text' : 'password'}
+                                    slotProps={{
+                                        input: {
+                                            endAdornment:(
+                                                <InputAdornment position="end">
+                                                    <IconButton
+                                                        aria-label={
+                                                            showPassword ? 'hide the password' : 'display the password'
+                                                        }
+                                                        onClick={handleClickShowPassword}
+                                                        edge="end"
+                                                    >
+                                                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                    </IconButton>
+                                                </InputAdornment>
+                                            )
+                                        }
+                                    }}
+                                />
                             </Stack>
                             <Stack>
-                                <TextField label="Confirm Password" onChange={(e) => setRetypePassword(e.target.value)} required />
+                                <TextField 
+                                    label="Confirm Password" 
+                                    value={retypePassword}
+                                    onChange={(e) => setRetypePassword(e.target.value)} 
+                                    required
+                                    type={showRetypePassword ? 'text' : 'password'}
+                                    slotProps={{
+                                        input: {
+                                            endAdornment:(
+                                                <InputAdornment position="end">
+                                                    <IconButton
+                                                        aria-label={
+                                                            showRetypePassword ? 'hide the retype password' : 'display the retype password'
+                                                        }
+                                                        onClick={handleClickShowRetypePassword}
+                                                        edge="end"
+                                                    >
+                                                        {showRetypePassword ? <VisibilityOff /> : <Visibility />}
+                                                    </IconButton>
+                                                </InputAdornment>
+                                            )
+                                        }
+                                    }}
+                                />
                             </Stack>
                             <Stack>
                                 <Stack sx={{ display: "block", alignSelf: "end" }}>
                                     <Button variant="contained" type="submit" align="end" onClick={handleSubmit}>Sign Up</Button>
                                 </Stack>
+                            </Stack>
+                            <Stack direction={'row'}>
+                                <Typography>Already have an account? <Link to={'/login'}>Login here</Link></Typography>
                             </Stack>
                         </Stack>
                     </Stack>
