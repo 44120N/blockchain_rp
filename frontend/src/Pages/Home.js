@@ -71,11 +71,11 @@ export default function Home() {
             <Container fixed sx={{ marginY: "3%" }}>
                 <Stack gap={5}>
                     <Stack>
-                        <Typography variant="h1" color="primary">
-                            Hello, World!
+                        <Typography variant="h2" color="primary">
+                            Welcome, (fetched username)!
                         </Typography>
-                        <Typography variant="h2" color="navy">
-                            Lorem Ipsum
+                        <Typography variant="h3" color="navy">
+                            Dashboard
                         </Typography>
                         <Divider
                             sx={{
@@ -86,56 +86,7 @@ export default function Home() {
                     </Stack>
 
                     <Stack>
-                        <Paper sx={{ width: "100%" }}>
-                            <TableContainer sx={{ maxHeight: 440 }}>
-                                <Table stickyHeader aria-label="sticky table">
-                                    <TableHead>
-                                        <TableRow>
-                                            {columns.map((column) => (
-                                                <TableCell
-                                                    key={column.id}
-                                                    align={column.align}
-                                                    style={{ minWidth: column.minWidth }}
-                                                >
-                                                    {column.label}
-                                                </TableCell>
-                                            ))}
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {rows
-                                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                            .map((row) => {
-                                                return (
-                                                    <TableRow hover role="checkbox" tabIndex={-1} key={row.code}>
-                                                        {columns.map((column) => {
-                                                            const value = row[column.id];
-                                                            return (
-                                                                <TableCell key={column.id} align={column.align}>
-                                                                    <Link to={row.link}>
-                                                                        {column.format && typeof value === 'number'
-                                                                            ? column.format(value)
-                                                                            : value}
-                                                                    </Link>
-                                                                </TableCell>
-                                                            );
-                                                        })}
-                                                    </TableRow>
-                                                );
-                                            })}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                            <TablePagination
-                                rowsPerPageOptions={[10, 25, 100]}
-                                component="div"
-                                count={rows.length}
-                                rowsPerPage={rowsPerPage}
-                                page={page}
-                                onPageChange={handleChangePage}
-                                onRowsPerPageChange={handleChangeRowsPerPage}
-                            />
-                        </Paper>
+                        Your ID
                     </Stack>
                 </Stack>
             </Container>
