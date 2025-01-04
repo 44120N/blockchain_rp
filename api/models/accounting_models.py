@@ -92,7 +92,7 @@ class TransactionLine(models.Model):
     def generate_custom_id(self):
         """Create a custom ID combining transaction ID and a line number"""
         line_number = str(self.transaction.lines.count() + 1)
-        return f"{self.transaction.id}-{line_number}-{self.account.id}-{self.is_debit}"
+        return f"{self.transaction.id}-{line_number}-{self.account.id}-{str(self.is_debit)[0]}"
     
     def save(self, *args, **kwargs):
         if not self.id:
