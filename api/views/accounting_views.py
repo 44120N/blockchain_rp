@@ -1,166 +1,161 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
 from ..forms import GeneralJournalForm, TransactionForm, TransactionLineForm, AccountForm
 from ..models import GeneralJournal, Transaction, TransactionLine, Account
+from ..serializers import GeneralJournalSerializer, TransactionSerializer, TransactionLineSerializer, AccountSerializer
 
 # Create your views here.
 
-# Create General Journal
-def create_general_journal(request):
-    if request.method == 'POST':
-        form = GeneralJournalForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('general_journal_list')
-    else:
-        form = GeneralJournalForm()
-    return render(request, 'create_general_journal.html', {'form': form})
+class GeneralJournalAPI(APIView):
+    serializer_class = GeneralJournalSerializer
+    lookup_url_kwarg = 'id'
 
-# Read General Journal List
-def general_journal_list(request):
-    journals = GeneralJournal.objects.all()
-    return render(request, 'general_journal_list.html', {'journals': journals})
+    def get(self, request, format=None):
+        journal_id = request.GET.get(self.lookup_url_kwarg)
+        if journal_id:
+            journal = get_object_or_404(GeneralJournal, id=journal_id)
+            data = self.serializer_class(journal).data
+            return Response(data, status=status.HTTP_200_OK)
+        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-# Update General Journal
-def update_general_journal(request, pk):
-    journal = get_object_or_404(GeneralJournal, pk=pk)
-    if request.method == 'POST':
-        form = GeneralJournalForm(request.POST, instance=journal)
-        if form.is_valid():
-            form.save()
-            return redirect('journal_list')
-    else:
-        form = GeneralJournalForm(instance=journal)
-    return render(request, 'update_general_journal.html', {'form': form})
+    def post(self, request, format=None):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# Delete General Journal
-def delete_general_journal(request, pk):
-    journal = get_object_or_404(GeneralJournal, pk=pk)
-    if request.method == 'POST':
-        journal.delete()
-        return redirect('journal_list')
-    return redirect('journal_list')
+    def put(self, request, format=None):
+        journal_id = request.data.get(self.lookup_url_kwarg)
+        if journal_id:
+            journal = get_object_or_404(GeneralJournal, id=journal_id)
+            serializer = self.serializer_class(journal, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-# Create Transaction
-def create_transaction(request, general_journal_id):
-    general_journal = get_object_or_404(GeneralJournal, pk=general_journal_id)
-    
-    if request.method == 'POST':
-        form = TransactionForm(request.POST)
-        if form.is_valid():
-            transaction = form.save(commit=False)
-            transaction.journal = general_journal
-            transaction.save()
-            return redirect('transaction_list', general_journal_id=general_journal.id)
-    else:
-        form = TransactionForm()
-    
-    return render(request, 'create_transaction.html', {'form': form, 'general_journal': general_journal})
+    def delete(self, request, format=None):
+        journal_id = request.GET.get(self.lookup_url_kwarg)
+        if journal_id:
+            journal = get_object_or_404(GeneralJournal, id=journal_id)
+            journal.delete()
+            return Response({"message": "General Journal deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-# Read Transaction List
-def transaction_list(request, general_journal_id):
-    general_journal = get_object_or_404(GeneralJournal, pk=general_journal_id)
-    transactions = Transaction.objects.filter(journal=general_journal)
-    return render(request, 'transaction_list.html', {
-        'transactions': transactions,
-        'general_journal': general_journal
-    })
+class TransactionAPI(APIView):
+    serializer_class = TransactionSerializer
+    lookup_url_kwarg = 'id'
 
-# Update Transaction
-def update_transaction(request, pk):
-    transaction = get_object_or_404(Transaction, pk=pk)
-    if request.method == 'POST':
-        form = TransactionForm(request.POST, instance=transaction)
-        if form.is_valid():
-            form.save()
-            return redirect('transaction_list')
-    else:
-        form = TransactionForm(instance=transaction)
-    return render(request, 'update_transaction.html', {'form': form, 'pk': pk})
+    def get(self, request, format=None):
+        transaction_id = request.GET.get(self.lookup_url_kwarg)
+        if transaction_id:
+            transaction = get_object_or_404(Transaction, id=transaction_id)
+            data = self.serializer_class(transaction).data
+            return Response(data, status=status.HTTP_200_OK)
+        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-# Delete Transaction
-def delete_transaction(request, pk):
-    transaction = get_object_or_404(Transaction, pk=pk)
-    if request.method == 'POST':
-        transaction.delete()
-        return redirect('transaction_list')
-    return redirect('transaction_list')
+    def post(self, request, format=None):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# Create Transaction Line
-def create_transaction_line(request, transaction_id):
-    transaction = get_object_or_404(Transaction, pk=transaction_id)
-    if request.method == 'POST':
-        form = TransactionLineForm(request.POST)
-        if form.is_valid():
-            transaction_line = form.save(commit=False)
-            transaction_line.transaction = transaction
-            transaction_line.save()
-            return redirect('transaction_line_list', transaction_id=transaction_id)
-    else:
-        form = TransactionLineForm()
-    return render(request, 'create_transaction_line.html', {'form': form})
+    def put(self, request, format=None):
+        transaction_id = request.data.get(self.lookup_url_kwarg)
+        if transaction_id:
+            transaction = get_object_or_404(Transaction, id=transaction_id)
+            serializer = self.serializer_class(transaction, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
+    def delete(self, request, format=None):
+        transaction_id = request.GET.get(self.lookup_url_kwarg)
+        if transaction_id:
+            transaction = get_object_or_404(Transaction, id=transaction_id)
+            transaction.delete()
+            return Response({"message": "Transaction deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-# Read Transaction Line List
-def transaction_line_list(request, transaction_id):
-    transaction = get_object_or_404(Transaction, pk=transaction_id)
-    transaction_lines = TransactionLine.objects.filter(transaction=transaction)
-    return render(request, 'transaction_line_list.html', {
-        'transaction_lines': transaction_lines,
-        'transaction': transaction
-    })
+class TransactionLineAPI(APIView):
+    serializer_class = TransactionLineSerializer
+    lookup_url_kwarg = 'id'
 
-# Update Transaction Line
-def update_transaction_line(request, pk):
-    transaction_line = get_object_or_404(TransactionLine, pk=pk)
-    if request.method == 'POST':
-        form = TransactionLineForm(request.POST, instance=transaction_line)
-        if form.is_valid():
-            form.save()
-            return redirect('transaction_line_list', transaction_id=transaction_line.transaction.id)
-    else:
-        form = TransactionLineForm(instance=transaction_line)
-    return render(request, 'update_transaction_line.html', {'form': form, 'pk': pk})
+    def get(self, request, format=None):
+        line_id = request.GET.get(self.lookup_url_kwarg)
+        if line_id:
+            line = get_object_or_404(TransactionLine, id=line_id)
+            data = self.serializer_class(line).data
+            return Response(data, status=status.HTTP_200_OK)
+        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-# Delete Transaction Line
-def delete_transaction_line(request, pk):
-    transaction_line = get_object_or_404(TransactionLine, pk=pk)
-    if request.method == 'POST':
-        transaction_line.delete()
-        return redirect('transaction_line_list')
-    return redirect('transaction_line_list')
+    def post(self, request, format=None):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# Create Account
-def create_account(request):
-    if request.method == 'POST':
-        form = AccountForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('account_list')
-    else:
-        form = AccountForm()
-    return render(request, 'create_account.html', {'form': form})
+    def put(self, request, format=None):
+        line_id = request.data.get(self.lookup_url_kwarg)
+        if line_id:
+            line = get_object_or_404(TransactionLine, id=line_id)
+            serializer = self.serializer_class(line, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-# Read Account List
-def account_list(request):
-    accounts = Account.objects.all()
-    return render(request, 'account_list.html', {'accounts': accounts})
+    def delete(self, request, format=None):
+        line_id = request.GET.get(self.lookup_url_kwarg)
+        if line_id:
+            line = get_object_or_404(TransactionLine, id=line_id)
+            line.delete()
+            return Response({"message": "Transaction Line deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-# Update Account
-def update_account(request, pk):
-    account = get_object_or_404(Account, pk=pk)
-    if request.method == 'POST':
-        form = AccountForm(request.POST, instance=account)
-        if form.is_valid():
-            form.save()
-            return redirect('account_list')
-    else:
-        form = AccountForm(instance=account)
-    return render(request, 'update_account.html', {'form': form})
+class AccountAPI(APIView):
+    serializer_class = AccountSerializer
+    lookup_url_kwarg = 'id'
 
-# Delete Account
-def delete_account(request, pk):
-    account = get_object_or_404(Account, pk=pk)
-    if request.method == 'POST':
-        account.delete()
-        return redirect('account_list')
-    return redirect('account_list')
+    def get(self, request, format=None):
+        account_id = request.GET.get(self.lookup_url_kwarg)
+        if account_id:
+            account = get_object_or_404(Account, id=account_id)
+            data = self.serializer_class(account).data
+            return Response(data, status=status.HTTP_200_OK)
+        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, request, format=None):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, format=None):
+        account_id = request.data.get(self.lookup_url_kwarg)
+        if account_id:
+            account = get_object_or_404(Account, id=account_id)
+            serializer = self.serializer_class(account, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, format=None):
+        account_id = request.GET.get(self.lookup_url_kwarg)
+        if account_id:
+            account = get_object_or_404(Account, id=account_id)
+            account.delete()
+            return Response({"message": "Account deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)

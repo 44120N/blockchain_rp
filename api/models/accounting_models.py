@@ -30,14 +30,14 @@ class GeneralJournal(models.Model):
         return self.id
     
     def save(self, *args, **kwargs):
-        self.id=f"{self.company}-{self.period}"
+        self.id=f"{self.company}:{self.period}"
         self.balance = sum(tx.total_debits() for tx in self.transactions.all())
         super(GeneralJournal, self).save(*args, **kwargs)
 
 class Transaction(models.Model):
     id = models.CharField(primary_key=True, max_length=255, editable=False)
     date = models.DateTimeField(verbose_name="Transaction Date")
-    description = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
     journal = models.ForeignKey(
         GeneralJournal, on_delete=models.CASCADE, related_name="transactions"
     )
