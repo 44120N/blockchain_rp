@@ -18,7 +18,13 @@ class UserLoginAPI(APIView):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
-                return Response({"message": "Login successful"}, status=status.HTTP_200_OK)
+                return Response({
+                    "blockchain": user.chain_user.blockchain.id,
+                    "private_key": user.chain_user.private_key,
+                    "public_key": user.chain_user.public_key,
+                    "username": user.username,
+                    "email": user.email,
+                }, status=status.HTTP_200_OK)
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -28,14 +34,15 @@ class UserSignupAPI(APIView):
     def post(self, request, *args, **kwargs):
         serializer = SignUpSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
+            user:User = serializer.save()
 
             blockchain = Blockchain.objects.create()
             chain_user = ChainUser.objects.create(user=user, blockchain=blockchain)
             private_key, public_key = chain_user.generate_keys()
+            login(request, user)
 
             return Response({
-                "message": "Signup successful",
+                "blockchain": user.chain_user.blockchain.id,
                 "private_key": private_key,
                 "public_key": public_key,
                 "username": user.username,

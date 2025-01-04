@@ -4,9 +4,11 @@ import Visibility from "@mui/icons-material/Visibility"
 import VisibilityOff from "@mui/icons-material/VisibilityOff"
 import { useState } from "react";
 import axios from "axios"
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { saveData } from "../DataEncrypt";
 
 export default function Login() {
+    const redirect = useNavigate();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -30,30 +32,38 @@ export default function Login() {
     }
 
 
-    async function handleSubmit(e) {
+    function handleSubmit(e) {
         e.preventDefault();
         const csrftoken = getCookie('csrftoken');
 
-        try {
-            const response = await axios.post(
-                "/api/login/",
-                { username, password },
-                {
-                    headers: {
-                        "X-CSRFToken": csrftoken,
-                    },
-                }
-            );
-            if (response.data.success) {
-                alert("Form Submitted");
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('password', password);
+
+        const response = axios.post(
+            "/api/login/",
+            formData,
+            {
+                headers: {
+                    "X-CSRFToken": csrftoken,
+                },
             }
-            else {
-                alert("Invalid credentials.");
+        )
+        .then(function(response){
+            if (response.data) {
+                saveData('login_data', JSON.stringify(response.data), 60);
+                redirect('/');
             }
-        } catch (error) {
-            console.error("Error submitting form:", error);
-            alert("Error submitting form. Please try again later.");
-        }
+        })
+        .catch(function(error) {
+            if (error.response && error.response.data) {
+                const errors = error.response.data;
+                alert("Form validation failed:\n" + JSON.stringify(errors));
+            } else {
+                console.error("Error submitting form:", error);
+                alert("Error submitting form. Please try again later.");
+            }
+        });
     }
 
     return (

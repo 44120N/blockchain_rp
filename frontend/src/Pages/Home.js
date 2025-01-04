@@ -1,78 +1,39 @@
 import React from "react";
-import PropTypes from "prop-types";
 import ColorPalette from "../Components/ColorPalette";
+import { useState, useEffect } from "react";
+import { getData } from "../DataEncrypt";
 import { Link } from "react-router-dom";
 import {
     Container,
     Typography,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    IconButton,
-    TableRow,
-    Box,
-    Collapse,
-    TablePagination,
     Divider,
     Stack,
 } from "@mui/material";
 
-const columns = [
-    { id: 'company', label: 'Company', minWidth: 170 },
-    { id: 'period', label: 'Period', minWidth: 100 },
-    {
-        id: 'balance',
-        label: 'Balance',
-        minWidth: 170,
-        align: 'right',
-        format: (value) => value.toLocaleString('en-US'),
-    },
-];
-
-function createData(company, period, balance, link) {
-    return { company, period, balance, link };
-}
-
-const rows = [
-    createData('India', 'IN', 1324171354, "/india"),
-    createData('China', 'CN', 1403500365, "/home"),
-    createData('Italy', 'IT', 60483973, "/home"),
-    createData('United States', 'US', 327167434, "/home"),
-    createData('Canada', 'CA', 37602103, "/home"),
-    createData('Australia', 'AU', 25475400, "/home"),
-    createData('Germany', 'DE', 83019200, "/home"),
-    createData('Ireland', 'IE', 485700, "/home"),
-    createData('Mexico', 'MX', 126577691, "/home"),
-    createData('Japan', 'JP', 126317000, "/home"),
-    createData('France', 'FR', 67022000, "/home"),
-    createData('United Kingdom', 'GB', 67545757, "/home"),
-    createData('Russia', 'RU', 146793744, "/home"),
-    createData('Nigeria', 'NG', 200962417, "/home"),
-    createData('Brazil', 'BR', 210147125, "/home"),
-];
-
 export default function Home() {
-    const [page, setPage] = React.useState(0);
-    const [rowsPerPage, setRowsPerPage] = React.useState(10);
+    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
+    const [privateKey, setPrivateKey] = useState('');
+    const [publicKey, setPublicKey] = useState('');
+    const [blockchain, setBlockchain] = useState('');
 
-    const handleChangePage = (event, newPage) => {
-        setPage(newPage);
-    };
-
-    const handleChangeRowsPerPage = (event) => {
-        setRowsPerPage(+event.target.value);
-        setPage(0);
-    };
+    useEffect(() => {
+        const loginData = getData('login_data');
+        if (loginData) {
+            setUsername(loginData.username);
+            setEmail(loginData.email);
+            setPrivateKey(loginData.private_key);
+            setPublicKey(loginData.public_key);
+            setBlockchain(loginData.blockchain)
+        }
+    }, []);
     return (
         <ColorPalette>
             <Container fixed sx={{ marginY: "3%" }}>
                 <Stack gap={5}>
                     <Stack>
                         <Typography variant="h2" color="primary">
-                            Welcome, (fetched username)!
+                            Welcome, {username ? username: 'Anonymous'}!
                         </Typography>
                         <Typography variant="h3" color="navy">
                             Dashboard
@@ -86,7 +47,10 @@ export default function Home() {
                     </Stack>
 
                     <Stack>
-                        Your ID
+                        <Typography>E-mail: {email}</Typography>
+                        <Typography>Blockchain ID: {blockchain}</Typography>
+                        <Typography>Public Key: {publicKey}</Typography>
+                        <Typography>Private Key: {privateKey}</Typography>
                     </Stack>
                 </Stack>
             </Container>

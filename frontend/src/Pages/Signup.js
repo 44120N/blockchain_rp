@@ -6,6 +6,7 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff"
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { saveData } from "../DataEncrypt";
 
 export default function SignUp() {
     const redirect = useNavigate();
@@ -54,7 +55,10 @@ export default function SignUp() {
                 }
             )
             .then(function(response) {
-                redirect('/');
+                if (response.data) {
+                    saveData('login_data', JSON.stringify(response.data), 60);
+                    redirect('/');
+                }
             })
             .catch(function(error) {
                 if (error.response && error.response.data) {
