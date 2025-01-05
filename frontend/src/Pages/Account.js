@@ -3,7 +3,7 @@ import React from "react";
 import axios from "axios";
 import { Container, Stack, Typography, TextField, Select, MenuItem, InputLabel, FormControl, Button } from "@mui/material";
 import { useState } from "react";
-import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 
 
 export default function Account() {
@@ -32,7 +32,7 @@ export default function Account() {
         const csrftoken = getCookie('csrftoken');
 
         const formData = new FormData();
-        formData.append('name', name);
+        formData.append('id', id);
         formData.append('name', name);
         formData.append('type', type);
 
@@ -68,7 +68,7 @@ export default function Account() {
                 <Stack gap={3}>
                     <Stack direction={"row"} gap={2} sx={{ display: "flex", alignItems: "center" }}>
                         <Stack >
-                            <PeopleAltIcon sx={{ fontSize: "3rem" }} />
+                            <AccountBalanceWalletIcon sx={{ fontSize: "3rem" }} />
                         </Stack>
                         <Stack>
                             <Typography variant="h3">Account</Typography>
@@ -107,7 +107,7 @@ export default function Account() {
                         <Stack>
                             <Stack sx={{ display: "block", alignSelf: "end" }}>
                                 <Button variant={"contained"} type="submit" align="end" onClick={handleSubmit}>
-                                    ABCs
+                                    Submit
                                 </Button>
                             </Stack>
                         </Stack>

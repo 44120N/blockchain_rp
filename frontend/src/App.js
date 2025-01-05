@@ -9,18 +9,26 @@ import Login from "./Pages/Login";
 import SignUp from "./Pages/Signup";
 import GeneralJournal from "./Pages/GeneralJournal";
 import Account from "./Pages/Account";
+import Transaction from "./Pages/Transaction";
+
+import { VariableProvider } from "./Components/VariableProvider";
 
 export default function App() {
     return (
-        <Router>
-            <Routes>
-                <Route exact path="/" Component={Home} />
-                <Route path="/login" Component={Login} />
-                <Route path="/signup" Component={SignUp} />
-                <Route path="/journal" Component={GeneralJournal} />
-                <Route path="/account" Component={Account} />
-            </Routes>
-        </Router>
+        <VariableProvider>
+            <Router>
+                <Routes>
+                    <Route exact path="/" Component={Home} />
+                    <Route path="/login" Component={Login} />
+                    <Route path="/signup" Component={SignUp} />
+                    <Route path="/journal" Component={GeneralJournal} />
+                    <Route path="/account" Component={Account} />
+                    <Route path="/transaction" Component={Transaction} />
+                    <Route path="/transaction/:address" Component={Transaction} />
+                    <Route path="/transaction/:address/:method" Component={Transaction} />
+                </Routes>
+            </Router>
+        </VariableProvider>
     );
 }
 

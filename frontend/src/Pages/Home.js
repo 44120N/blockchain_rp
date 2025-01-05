@@ -51,18 +51,58 @@ export default function Home() {
                             }}
                         />
                     </Stack>
-                    {username ?(
-                        <Stack>
-                            <Typography>E-mail: {email}</Typography>
-                            <Typography>Blockchain ID: {blockchain}</Typography>
-                            <Typography>Public Key: {publicKey}</Typography>
-                            <Typography>Private Key: {privateKey}</Typography>
+                    {username ? (
+                        <Stack gap={1}>
+                            <Stack sx={{ alignContent: "center", p: 2, my: 1, bgcolor: "aliceblue", borderRadius: "8px" }}>
+                                <Typography fontSize={20}>
+                                    <Stack direction={"row"} gap={1} alignItems={"center"}>
+                                        <AlternateEmailIcon />
+                                        <b>E-mail:</b>
+                                    </Stack>
+                                </Typography>
+                                <Stack>
+                                    <Typography sx={{ mx: 4 }}>{email}</Typography>
+                                </Stack>
+                            </Stack>
+                            <Stack sx={{ alignContent: "center", p: 2, my: 1, bgcolor: "aliceblue", borderRadius: "8px" }}>
+                                <Typography fontSize={20}>
+                                    <Stack direction={"row"} gap={1} alignItems={"center"}>
+                                        <LinkIcon />
+                                        <b>Blockchain ID:</b>
+                                    </Stack>
+                                </Typography>
+                                <Stack>
+                                    <Typography sx={{ mx: 4 }}>{blockchain}</Typography>
+                                </Stack>
+                            </Stack>
+                            <Stack sx={{ alignContent: "center", p: 2, my: 1, bgcolor: "aliceblue", borderRadius: "8px" }}>
+                                <Typography fontSize={20}>
+                                    <Stack direction={"row"} gap={1} alignItems={"center"}>
+                                        <KeyIcon />
+                                        <b>Public Key:</b>
+                                    </Stack>
+                                </Typography>
+                                <Stack>
+                                    <Typography sx={{ mx: 4 }}>{publicKey}</Typography>
+                                </Stack>
+                            </Stack>
+                            <Stack sx={{ alignContent: "center", p: 2, my: 1, bgcolor: "aliceblue", borderRadius: "8px" }}>
+                                <Typography fontSize={20}>
+                                    <Stack direction={"row"} gap={1} alignItems={"center"}>
+                                        <VpnKeyIcon />
+                                        <b>Private Key:</b>
+                                    </Stack>
+                                </Typography>
+                                <Stack>
+                                    <Typography sx={{ mx: 4 }}>{privateKey}</Typography>
+                                </Stack>
+                            </Stack>
                         </Stack>
                     ) : (
                         <Button href="/login" variant="contained">Login</Button>
                     )}
                 </Stack>
             </Container>
-        </ColorPalette>
+        </ColorPalette >
     );
 }
