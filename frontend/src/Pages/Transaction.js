@@ -23,6 +23,7 @@ import { VariableContext } from "../Components/VariableContext";
 
 import { Link } from "react-router-dom";
 
+
 const columns = [
     { id: 'timestamp', label: 'Timestamp', minWidth: 170 },
     { id: 'account', label: 'Account', minWidth: 100 },
@@ -42,38 +43,34 @@ const columns = [
     },
 ];
 
-function createData(timestamp, account, debit, credit) {
-    return { timestamp, account, debit, credit };
+function createData(id, timestamp, account, debit, credit) {
+    return { id, timestamp, account, debit, credit };
 }
 
 const rows = [
-    createData('India', 'IN', 1324171354, 123123),
-    createData('China', 'CN', 1403500365, 123123),
-    createData('Italy', 'IT', 60483973, 123123),
-    createData('United States', 'US', 327167434, 123123),
-    createData('Canada', 'CA', 37602103, 123123),
-    createData('Australia', 'AU', 25475400, 123123),
-    createData('Germany', 'DE', 83019200, 123123),
-    createData('Ireland', 'IE', 485700, 123123),
-    createData('Mexico', 'MX', 126577691, 123123),
-    createData('Japan', 'JP', 126317000, 123123),
-    createData('France', 'FR', 67022000, 123123),
-    createData('United Kingdom', 'GB', 67545757, 123123),
-    createData('Russia', 'RU', 146793744, 123123),
-    createData('Nigeria', 'NG', 200962417, 123123),
-    createData('Brazil', 'BR', 210147125, 123123),
+    // FORMAT: createData(id, timestamp, account, debit, credit). id = link
+    createData(211, 'India', 'IN', 1324171354, 123123),
+    createData(121, 'China', 'CN', 1403500365, 123123),
+    createData(112, 'Italy', 'IT', 60483973, 123123),
+    createData(311, 'United States', 'US', 327167434, 123123),
+    createData(131, 'Canada', 'CA', 37602103, 123123),
+    createData(113, 'Australia', 'AU', 25475400, 123123),
+    createData(411, 'Germany', 'DE', 83019200, 123123),
+    createData(141, 'Ireland', 'IE', 485700, 123123),
+    createData(114, 'Mexico', 'MX', 126577691, 123123),
+    createData(511, 'Japan', 'JP', 126317000, 123123),
+    createData(151, 'France', 'FR', 67022000, 123123),
+    createData(115, 'United Kingdom', 'GB', 67545757, 123123),
+    createData(611, 'Russia', 'RU', 146793744, 123123),
+    createData(161, 'Nigeria', 'NG', 200962417, 123123),
+    createData(116, 'Brazil', 'BR', 210147125, 123123),
 ];
 
-
-
 export default function Transaction() {
-    // const [id, setId] = useParams()
-    // const [name, setName] = useState("")
-    // const [type, setType] = useState("undefined")
 
     // Table
-    const [page, setPage] = React.useState(0);
-    const [rowsPerPage, setRowsPerPage] = React.useState(10);
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
 
     const handleChangePage = (event, newPage) => {
         setPage(newPage);
@@ -180,7 +177,7 @@ export default function Transaction() {
                                                             const value = row[column.id];
                                                             return (
                                                                 <TableCell key={column.id} align={column.align}>
-                                                                    <Link to={row.link}>
+                                                                    <Link to={`/transaction/${row.id}`}>
                                                                         {column.format && typeof value === 'number'
                                                                             ? column.format(value)
                                                                             : value}
@@ -208,6 +205,7 @@ export default function Transaction() {
                 </Stack>
             )
         }
+        
     }, [])
 
     return (<>
