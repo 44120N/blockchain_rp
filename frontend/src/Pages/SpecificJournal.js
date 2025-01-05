@@ -67,6 +67,7 @@ export default function SpecificJournal() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [popup, setPopup] = useState(false);
+    const { address } = useParams()
 
     const handleChangePage = (event, newPage) => {
         setPage(newPage);
@@ -101,9 +102,11 @@ export default function SpecificJournal() {
                         </Stack>
                         <Stack>
                             <Stack sx={{ display: "block", alignSelf: "end" }}>
-                                <Button onClick={() => { setPopup(true) }}>
-                                    Add Journal
-                                </Button>
+                                <Link to={`../transaction/${address}/create`}>
+                                    <Button>
+                                        Add Transaction
+                                    </Button>
+                                </Link>
                                 <Popup trigger={popup} setTrigger={setPopup} title="A">
                                     <Stack>
                                         <Typography>Hey</Typography>
@@ -142,7 +145,7 @@ export default function SpecificJournal() {
                                                                 return (
                                                                     <TableCell key={column.id} align={column.align}>
                                                                         {(value == row.id) ?
-                                                                            <Link to={row.id}>
+                                                                            <Link to={`../transaction/${row.id}`}>
                                                                                 {column.format && typeof value === 'number'
                                                                                     ? column.format(value)
                                                                                     : value}
@@ -160,7 +163,7 @@ export default function SpecificJournal() {
                                                             <TableCell sx={{ minWidth: 100 }} align="right">
                                                                 <Stack sx={{ display: "block" }}>
                                                                     <Button onClick={handleEdit}><EditIcon /></Button>
-                                                                    <Button onClick={handleDelete}><DeleteForeverIcon /></Button>
+                                                                    <Button onClick={() => { setPopup(true) }}><DeleteForeverIcon /></Button>
                                                                 </Stack>
                                                             </TableCell>
                                                         </TableRow>
