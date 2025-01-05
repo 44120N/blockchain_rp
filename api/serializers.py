@@ -3,6 +3,7 @@ from .models import BlockHeader, Blockchain, Block, ChainUser, TransactionLine, 
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.models import User
 
+# GET
 class BlockHeaderSerializer(serializers.ModelSerializer):
     class Meta:
         model = BlockHeader
@@ -49,6 +50,7 @@ class GeneralJournalSerializer(serializers.ModelSerializer):
         model = GeneralJournal
         fields = '__all__'
 
+# POST
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
     password = serializers.CharField(write_only=True)
@@ -67,3 +69,18 @@ class SignUpSerializer(serializers.ModelSerializer):
             email=validated_data['email']
         )
         return user
+
+class GeneralJournalFormSerializer(serializers.ModelField):
+    class Meta:
+        model = GeneralJournal
+        fields = ['company', 'period']
+
+class TransactionFormSerializer(serializers.ModelField):
+    class Meta:
+        model = Transaction
+        fields = ['description', 'date']
+
+class TransactionLineFormSerializer(serializers.ModelField):
+    class Meta:
+        model = TransactionLine
+        fields = ['account', 'is_debit', 'value']
