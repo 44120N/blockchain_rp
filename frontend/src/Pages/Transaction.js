@@ -24,37 +24,44 @@ import { VariableContext } from "../Components/VariableContext";
 import { Link } from "react-router-dom";
 
 const columns = [
-    { id: 'company', label: 'Company', minWidth: 170 },
-    { id: 'period', label: 'Period', minWidth: 100 },
+    { id: 'timestamp', label: 'Timestamp', minWidth: 170 },
+    { id: 'account', label: 'Account', minWidth: 100 },
     {
-        id: 'balance',
-        label: 'Balance',
+        id: 'debit',
+        label: 'Debit',
+        minWidth: 170,
+        align: 'right',
+        format: (value) => value.toLocaleString('en-US'),
+    },
+    {
+        id: 'credit',
+        label: 'Credit',
         minWidth: 170,
         align: 'right',
         format: (value) => value.toLocaleString('en-US'),
     },
 ];
 
-function createData(company, period, balance, link) {
-    return { company, period, balance, link };
+function createData(timestamp, account, debit, credit) {
+    return { timestamp, account, debit, credit };
 }
 
 const rows = [
-    createData('India', 'IN', 1324171354, "/india"),
-    createData('China', 'CN', 1403500365, "/home"),
-    createData('Italy', 'IT', 60483973, "/home"),
-    createData('United States', 'US', 327167434, "/home"),
-    createData('Canada', 'CA', 37602103, "/home"),
-    createData('Australia', 'AU', 25475400, "/home"),
-    createData('Germany', 'DE', 83019200, "/home"),
-    createData('Ireland', 'IE', 485700, "/home"),
-    createData('Mexico', 'MX', 126577691, "/home"),
-    createData('Japan', 'JP', 126317000, "/home"),
-    createData('France', 'FR', 67022000, "/home"),
-    createData('United Kingdom', 'GB', 67545757, "/home"),
-    createData('Russia', 'RU', 146793744, "/home"),
-    createData('Nigeria', 'NG', 200962417, "/home"),
-    createData('Brazil', 'BR', 210147125, "/home"),
+    createData('India', 'IN', 1324171354, 123123),
+    createData('China', 'CN', 1403500365, 123123),
+    createData('Italy', 'IT', 60483973, 123123),
+    createData('United States', 'US', 327167434, 123123),
+    createData('Canada', 'CA', 37602103, 123123),
+    createData('Australia', 'AU', 25475400, 123123),
+    createData('Germany', 'DE', 83019200, 123123),
+    createData('Ireland', 'IE', 485700, 123123),
+    createData('Mexico', 'MX', 126577691, 123123),
+    createData('Japan', 'JP', 126317000, 123123),
+    createData('France', 'FR', 67022000, 123123),
+    createData('United Kingdom', 'GB', 67545757, 123123),
+    createData('Russia', 'RU', 146793744, 123123),
+    createData('Nigeria', 'NG', 200962417, 123123),
+    createData('Brazil', 'BR', 210147125, 123123),
 ];
 
 
