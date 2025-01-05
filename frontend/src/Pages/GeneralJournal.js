@@ -15,9 +15,11 @@ import {
     TablePagination,
     Divider,
     Stack,
+    Button,
 } from "@mui/material";
 import { Link } from "react-router-dom";
 import ColorPalette from "../Components/ColorPalette";
+import Popup from "../Components/Popup";
 
 const columns = [
     { id: 'company', label: 'Company', minWidth: 170 },
@@ -78,6 +80,13 @@ export default function GeneralJournal() {
                                     width: "100%",
                                 }}
                             />
+                        </Stack>
+                        <Stack>
+                            <Typography variant="h4">Add Journal</Typography>
+                            <Stack sx={{ display: "block", alignSelf: "end" }}>
+                                <Popup />
+
+                            </Stack>
                         </Stack>
                         <Stack>
                             <Paper sx={{ width: "100%" }}>
