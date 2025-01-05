@@ -116,9 +116,3 @@ th,
 td {
     font-size: 1rem !important;
 }
-
-/* highlight color */
-::selection {
-    background-color: #053331;
-    color: #bda26d;
-}
