@@ -21,7 +21,7 @@ class Account(models.Model):
         return f"{self.name} ({self.id})"
 
 class GeneralJournal(models.Model):
-    id = models.CharField(primary_key=True, max_length=255)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, max_length=255)
     company = models.CharField(max_length=255)
     period = models.DateField(verbose_name="Journal Period")
     balance = models.DecimalField(decimal_places=2, max_digits=100)
@@ -30,9 +30,8 @@ class GeneralJournal(models.Model):
         return self.id
     
     def save(self, *args, **kwargs):
-        self.id=f"{self.company}:{self.period}"
         self.balance = sum(tx.total_debits() for tx in self.transactions.all())
-        super(GeneralJournal, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 class Transaction(models.Model):
     id = models.CharField(primary_key=True, max_length=255, editable=False)

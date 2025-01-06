@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
     Container,
     Typography,
@@ -19,54 +19,64 @@ import {
     TextField
 } from "@mui/material";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ColorPalette from "../Components/ColorPalette";
 import Popup from "../Components/Popup";
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import EditIcon from '@mui/icons-material/Edit';
-
-
-import { useParams } from "react-router-dom";
-
-const columns = [
-    { id: 'id', label: 'ID', minWidth: 170 },
-    { id: 'company', label: 'Company', minWidth: 170 },
-    { id: 'period', label: 'Period', minWidth: 100 },
-    {
-        id: 'balance',
-        label: 'Balance',
-        minWidth: 170,
-        align: 'right',
-        format: (value) => value.toLocaleString('en-US'),
-    },
-];
-
-function createData(id, company, period, balance) {
-    return { id, company, period, balance };
-}
-
-const rows = [
-    createData("India-IN", 'India', 'IN', 1324171354),
-    createData("India-IN", 'China', 'CN', 1403500365),
-    createData("India-IN", 'Italy', 'IT', 60483973),
-    createData("India-IN", 'United States', 'US', 327167434),
-    createData("India-IN", 'Canada', 'CA', 37602103),
-    createData("India-IN", 'Australia', 'AU', 25475400),
-    createData("India-IN", 'Germany', 'DE', 83019200),
-    createData("India-IN", 'Ireland', 'IE', 485700),
-    createData("India-IN", 'Mexico', 'MX', 126577691),
-    createData("India-IN", 'Japan', 'JP', 126317000),
-    createData("India-IN", 'France', 'FR', 67022000),
-    createData("India-IN", 'United Kingdom', 'GB', 67545757),
-    createData("India-IN", 'Russia', 'RU', 146793744),
-    createData("India-IN", 'Nigeria', 'NG', 200962417),
-    createData("India-IN", 'Brazil', 'BR', 210147125),
-];
+import axios from "axios";
 
 export default function GeneralJournal() {
+    const redirect = useNavigate();
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [popup, setPopup] = useState(false);
+    const [rows, setRows] = useState([]);
+
+    const columns = [
+        { id: 'id', label: 'ID', minWidth: 120 },
+        { id: 'company', label: 'Company', minWidth: 170 },
+        { id: 'period', label: 'Period', minWidth: 120 },
+        {
+            id: 'balance',
+            label: 'Balance',
+            minWidth: 170,
+            align: 'right',
+            format: (value) => value.toLocaleString('en-US'),
+        },
+    ];
+    
+    const getCookie = (name) => {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+    
+        return cookieValue;
+    }
+    
+    function fetchData() {
+        const csrftoken = getCookie('csrftoken');
+        axios.get('/api/journal', {headers:{'X-CSRFTOKEN': csrftoken}})
+        .then(response => {
+            setRows(response.data);
+        })
+        .catch(error => {
+            console.error("Error fetching data:", error.response?.data || error.message);
+        })
+    }
+    
+    useEffect(()=>{
+        fetchData()
+        console.log(rows)
+    }, [])
 
     const handleChangePage = (event, newPage) => {
         setPage(newPage);
@@ -80,8 +90,8 @@ export default function GeneralJournal() {
     function handleDelete(e) {
         // TODO: Make delete function.
     }
-    function handleEdit() {
-
+    function handleEdit(journal_id) {
+        redirect(`/journal/${journal_id}/update`)
     }
 
     return (
@@ -116,73 +126,77 @@ export default function GeneralJournal() {
                             </Stack>
                         </Stack>
                         <Stack>
-                            <Paper sx={{ width: "100%" }}>
-                                <TableContainer sx={{ maxHeight: 440 }}>
-                                    <Table stickyHeader aria-label="sticky table">
-                                        <TableHead>
-                                            <TableRow>
-                                                {columns.map((column) => (
-                                                    <TableCell
-                                                        key={column.id}
-                                                        align={column.align}
-                                                        style={{ minWidth: column.minWidth }}
-                                                    >
-                                                        {column.label}
+                            {rows.length ? (
+                                <Paper sx={{ width: "100%" }}>
+                                    <TableContainer sx={{ maxHeight: 440 }}>
+                                        <Table stickyHeader aria-label="sticky table">
+                                            <TableHead>
+                                                <TableRow>
+                                                    {columns.map((column) => (
+                                                        <TableCell
+                                                            key={column.id}
+                                                            align={column.align}
+                                                            style={{ minWidth: column.minWidth }}
+                                                        >
+                                                            {column.label}
+                                                        </TableCell>
+                                                    ))}
+                                                    <TableCell align="right">
+                                                        Action
                                                     </TableCell>
-                                                ))}
-                                                <TableCell align="right">
-                                                    Action
-                                                </TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {rows
-                                                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                                .map((row) => {
-                                                    return (
-                                                        <TableRow hover role="checkbox" tabIndex={-1} key={row.code}>
-                                                            {columns.map((column) => {
-                                                                const value = row[column.id];
-                                                                return (
-                                                                    <TableCell key={column.id} align={column.align}>
-                                                                        {(value == row.id) ?
-                                                                            <Link to={row.id}>
-                                                                                {column.format && typeof value === 'number'
-                                                                                    ? column.format(value)
-                                                                                    : value}
-                                                                            </Link>
-                                                                            :
-                                                                            <>
-                                                                                {column.format && typeof value === 'number'
-                                                                                    ? column.format(value)
-                                                                                    : value}
-                                                                            </>
-                                                                        }
-                                                                    </TableCell>
-                                                                );
-                                                            })}
-                                                            <TableCell sx={{ minWidth: 100 }} align="right">
-                                                                <Stack sx={{ display: "block" }}>
-                                                                    <Button onClick={handleEdit}><EditIcon /></Button>
-                                                                    <Button onClick={() => { setPopup(true) }}><DeleteForeverIcon /></Button>
-                                                                </Stack>
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    );
-                                                })}
-                                        </TableBody>
-                                    </Table>
-                                </TableContainer>
-                                <TablePagination
-                                    rowsPerPageOptions={[10, 25, 100]}
-                                    component="div"
-                                    count={rows.length}
-                                    rowsPerPage={rowsPerPage}
-                                    page={page}
-                                    onPageChange={handleChangePage}
-                                    onRowsPerPageChange={handleChangeRowsPerPage}
-                                />
-                            </Paper>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {rows
+                                                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                                    .map((row) => {
+                                                        return (
+                                                            <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
+                                                                {columns.map((column) => {
+                                                                    const value = row[column.id];
+                                                                    return (
+                                                                        <TableCell key={`${row.id}-${column.id}`} align={column.align}>
+                                                                            {(value == row.id) ?
+                                                                                <Link to={row.id}>
+                                                                                    {column.format && typeof value === 'number'
+                                                                                        ? column.format(value)
+                                                                                        : value}
+                                                                                </Link>
+                                                                                :
+                                                                                <>
+                                                                                    {column.format && typeof value === 'number'
+                                                                                        ? column.format(value)
+                                                                                        : value}
+                                                                                </>
+                                                                            }
+                                                                        </TableCell>
+                                                                    );
+                                                                })}
+                                                                <TableCell sx={{ minWidth: 100 }} align="right">
+                                                                    <Stack flexWrap={'wrap'} direction={'row'} gap={1} justifyContent={'flex-end'}>
+                                                                        <Button sx={{p:0, width:'auto', minWidth:0}} onClick={()=>{handleEdit(row.id)}}><EditIcon /></Button>
+                                                                        <Button sx={{p:0, width:'auto', minWidth:0}} onClick={() => { setPopup(true) }}><DeleteForeverIcon /></Button>
+                                                                    </Stack>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        );
+                                                    })}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+                                    <TablePagination
+                                        rowsPerPageOptions={[10, 25, 100]}
+                                        component="div"
+                                        count={rows.length}
+                                        rowsPerPage={rowsPerPage}
+                                        page={page}
+                                        onPageChange={handleChangePage}
+                                        onRowsPerPageChange={handleChangeRowsPerPage}
+                                    />
+                                </Paper>
+                            ) : (
+                                <Typography>There is no Journal yet</Typography>
+                            )}
                         </Stack>
                     </Stack>
                 </Container>

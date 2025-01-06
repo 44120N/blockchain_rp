@@ -1,6 +1,8 @@
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.parsers import MultiPartParser
+
 from django.shortcuts import get_object_or_404
 from ..forms import GeneralJournalForm, TransactionForm, TransactionLineForm, AccountForm
 from ..models import GeneralJournal, Transaction, TransactionLine, Account
@@ -12,39 +14,70 @@ from ..serializers import (
 # Create your views here.
 
 class GeneralJournalAPI(APIView):
+    parser_classes = [MultiPartParser]
     lookup_url_kwarg = 'id'
     
     def get_serializer_class(self, method):
-        if method in ['POST', 'PUT']:
+        if method in ['POST', 'PUT', 'PATCH']:
             return GeneralJournalFormSerializer
         return GeneralJournalSerializer
-
+    
     def get(self, request, format=None):
         journal_id = request.GET.get(self.lookup_url_kwarg)
         if journal_id:
             journal = get_object_or_404(GeneralJournal, id=journal_id)
-            data = self.get_serializer_class('GET')(journal).data
-            return Response(data, status=status.HTTP_200_OK)
-        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
-
+            serializer = self.get_serializer_class('GET')(journal)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            journals = GeneralJournal.objects.all()
+            serializer = self.get_serializer_class('GET')(journals, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+    
     def post(self, request, format=None):
         serializer = self.get_serializer_class('POST')(data=request.data)
         if serializer.is_valid():
+            if GeneralJournal.objects.filter(
+                company=serializer.validated_data.get('company'),
+                period=serializer.validated_data.get('period'),
+            ).exists():
+                return Response({"status": "General Journal with the same credentials has been created"}, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    
     def put(self, request, format=None):
-        journal_id = request.data.get(self.lookup_url_kwarg)
+        journal_id = request.GET.get(self.lookup_url_kwarg)
         if journal_id:
             journal = get_object_or_404(GeneralJournal, id=journal_id)
-            serializer = self.get_serializer_class('PUT')(journal, data=request.data, partial=True)
+            serializer = self.get_serializer_class('PUT')(journal, data=request.data)
             if serializer.is_valid():
+                if GeneralJournal.objects.filter(
+                    company=serializer.validated_data.get('company'),
+                    period=serializer.validated_data.get('period'),
+                    balance=serializer.validated_data.get('balance'),
+                ).exclude(id=journal_id).exists():
+                    return Response({"status": "General Journal with the same credentials has been created"}, status=status.HTTP_400_BAD_REQUEST)
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
-
+    
+    def patch(self, request, format=None):
+        journal_id = request.GET.get(self.lookup_url_kwarg)
+        if journal_id:
+            journal = get_object_or_404(GeneralJournal, id=journal_id)
+            serializer = self.get_serializer_class('PATCH')(journal, data=request.data, partial=True)
+            if serializer.is_valid():
+                if GeneralJournal.objects.filter(
+                    company=serializer.validated_data.get('company'),
+                    period=serializer.validated_data.get('period'),
+                ).exclude(id=journal_id).exists():
+                    return Response({"status": "General Journal with the same credentials has been created"}, status=status.HTTP_400_BAD_REQUEST)
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+    
     def delete(self, request, format=None):
         journal_id = request.GET.get(self.lookup_url_kwarg)
         if journal_id:

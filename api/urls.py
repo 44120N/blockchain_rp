@@ -8,4 +8,5 @@ urlpatterns = [
     path('signup/', UserSignupAPI.as_view(), name='signup'),
     path('login/', UserLoginAPI.as_view(), name='login'),
     path('logout/', UserLogoutAPI.as_view(), name='logout'),
+    path('journal/', GeneralJournalAPI.as_view(), name='general-journal_api')
 ]

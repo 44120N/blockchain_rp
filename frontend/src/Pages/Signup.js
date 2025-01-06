@@ -54,21 +54,21 @@ export default function SignUp() {
                     },
                 }
             )
-                .then(function (response) {
-                    if (response.data) {
-                        saveData('login_data', JSON.stringify(response.data), 60);
-                        redirect('/');
-                    }
-                })
-                .catch(function (error) {
-                    if (error.response && error.response.data) {
-                        const errors = error.response.data;
-                        alert("Form validation failed:\n" + JSON.stringify(errors));
-                    } else {
-                        console.error("Error submitting form:", error);
-                        alert("Error submitting form. Please try again later.");
-                    }
-                });
+            .then(function (response) {
+                if (response.data) {
+                    saveData('login_data', JSON.stringify(response.data), 60);
+                    redirect('/');
+                }
+            })
+            .catch(function (error) {
+                if (error.response && error.response.data) {
+                    const errors = error.response.data;
+                    alert("Form validation failed:\n" + JSON.stringify(errors));
+                } else {
+                    console.error("Error submitting form:", error);
+                    alert("Error submitting form. Please try again later.");
+                }
+            });
         } else {
             alert("The password does not match.");
         }

@@ -70,17 +70,17 @@ class SignUpSerializer(serializers.ModelSerializer):
         )
         return user
 
-class GeneralJournalFormSerializer(serializers.ModelField):
+class GeneralJournalFormSerializer(serializers.ModelSerializer):
     class Meta:
         model = GeneralJournal
         fields = ['company', 'period']
 
-class TransactionFormSerializer(serializers.ModelField):
+class TransactionFormSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
         fields = ['description', 'date']
 
-class TransactionLineFormSerializer(serializers.ModelField):
+class TransactionLineFormSerializer(serializers.ModelSerializer):
     class Meta:
         model = TransactionLine
         fields = ['account', 'is_debit', 'value']

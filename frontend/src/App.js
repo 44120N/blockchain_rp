@@ -24,13 +24,13 @@ export default function App() {
                     <Route path="/login" Component={Login} />
                     <Route path="/signup" Component={SignUp} />
                     <Route path="/journal" Component={GeneralJournal} />
-                    <Route path="/journal/:address" Component={SpecificJournal} />
+                    <Route path="/journal/:journal_id" Component={SpecificJournal} />
                     <Route path="/journal/create" Component={AddJournal} />
-                    <Route path="/journal/:address/update" Component={UpdateJournal} />
+                    <Route path="/journal/:journal_id/update" Component={UpdateJournal} />
 
                     <Route path="/account" Component={Account} />
                     <Route path="/transaction" Component={Transaction} />
-                    <Route path="/transaction/:address" Component={Transaction} />
+                    <Route path="/transaction/:journal_id" Component={Transaction} />
                 </Routes>
             </Router>
         </VariableProvider>
