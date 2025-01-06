@@ -15,61 +15,38 @@ import {
     TablePagination,
     Divider,
     Stack,
+    Button,
+    TextField
 } from "@mui/material";
-import axios from "axios";
-import { useState, useContext } from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import ColorPalette from "../Components/ColorPalette";
+import Popup from "../Components/Popup";
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import EditIcon from '@mui/icons-material/Edit';
+
 import { useParams } from "react-router-dom";
 
-import { Link } from "react-router-dom";
-
-
-const columns = [
-    { id: 'timestamp', label: 'Timestamp', minWidth: 170 },
-    { id: 'account', label: 'Account', minWidth: 100 },
-    {
-        id: 'debit',
-        label: 'Debit',
-        minWidth: 170,
-        align: 'right',
-        format: (value) => value.toLocaleString('en-US'),
-    },
-    {
-        id: 'credit',
-        label: 'Credit',
-        minWidth: 170,
-        align: 'right',
-        format: (value) => value.toLocaleString('en-US'),
-    },
-];
-
-function createData(id, timestamp, account, debit, credit) {
-    return { id, timestamp, account, debit, credit };
-}
-
-const rows = [
-    // FORMAT: createData(id, timestamp, account, debit, credit). id = link
-    createData(211, 'India', 'IN', 1324171354, 123123),
-    createData(121, 'China', 'CN', 1403500365, 123123),
-    createData(112, 'Italy', 'IT', 60483973, 123123),
-    createData(311, 'United States', 'US', 327167434, 123123),
-    createData(131, 'Canada', 'CA', 37602103, 123123),
-    createData(113, 'Australia', 'AU', 25475400, 123123),
-    createData(411, 'Germany', 'DE', 83019200, 123123),
-    createData(141, 'Ireland', 'IE', 485700, 123123),
-    createData(114, 'Mexico', 'MX', 126577691, 123123),
-    createData(511, 'Japan', 'JP', 126317000, 123123),
-    createData(151, 'France', 'FR', 67022000, 123123),
-    createData(115, 'United Kingdom', 'GB', 67545757, 123123),
-    createData(611, 'Russia', 'RU', 146793744, 123123),
-    createData(161, 'Nigeria', 'NG', 200962417, 123123),
-    createData(116, 'Brazil', 'BR', 210147125, 123123),
-];
-
 export default function Transaction() {
+    const [name, setName] = useState("");
+    const [description, setDescription] = useState("");
+    const [period, setPeriod] = useState("");
 
-    // Table
+    const [rows, setRows] = useState([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [popup, setPopup] = useState(false);
+
+    const { journal_id } = useParams();
+    const [transaction_id, setTransaction_id] = useState("");
+
+    const columns = [
+        { id: 'date', label: 'Date', minWidth: 100 },
+        { id: 'account', label: 'Account', minWidth: 200 },
+        { id: 'ref', label: 'Ref', minWidth: 100 },
+        { id: 'dr', label: 'Debit', minWidth: 100 },
+        { id: 'cr', label: 'Credit', minWidth: 100 },
+    ];
 
     const handleChangePage = (event, newPage) => {
         setPage(newPage);
@@ -79,11 +56,6 @@ export default function Transaction() {
         setRowsPerPage(+event.target.value);
         setPage(0);
     };
-
-    // Handle address
-    const { address } = useParams();
-
-    const [status, setStatus] = useState(null);
 
     const getCookie = (name) => {
         let cookieValue = null;
@@ -97,105 +69,166 @@ export default function Transaction() {
                 }
             }
         }
-
         return cookieValue;
     }
 
-    function handleSubmit(e) {
-        e.preventDefault();
+    // function fetchJournalData() {
+    //     const csrftoken = getCookie('csrftoken');
+    //     axios.get(`/api/transaction?id=${journal_id}`, {
+    //         headers: {
+    //             'X-CSRFTOKEN': csrftoken,
+    //             "Content-Type": "multipart/form-data",
+    //         },
+    //     })
+    //         .then(response => {
+    //             setJournalId(response.data.id);
+    //             setCompany(response.data.company);
+    //             setPeriod(response.data.period);
+    //         })
+    //         .catch(error => {
+    //             console.error("Error fetching data:", error.response?.data || error.message);
+    //         })
+    // }
+
+    function fetchTransactionData() {
         const csrftoken = getCookie('csrftoken');
-
-        const formData = new FormData();
-        formData.append('status', status);
-        formData.append('type', type);
-
-        const response = axios.post(
-            "/api/transaction/",
-            formData,
-            {
-                headers: {
-                    "X-CSRFToken": csrftoken,
-                },
-            }
-        )
-            .then(function (response) {
-                if (response.data) {
-                    saveData('account_data', JSON.stringify(response.data), 60);
-                    redirect('/');
-                }
+        axios.get(`/api/transaction/?journal_id=${journal_id}`, {
+            headers: {
+                'X-CSRFTOKEN': csrftoken,
+                "Content-Type": "multipart/form-data",
+            },
+        })
+            .then(response => {
+                setTransaction_id(response.data.id)
             })
-            .catch(function (error) {
-                if (error.response && error.response.data) {
-                    const errors = error.response.data;
-                    alert("Form validation failed:\n" + JSON.stringify(errors));
-                } else {
-                    console.error("Error submitting form:", error);
-                    alert("Error submitting form. Please try again later.");
-                }
-            });
+            .catch(error => {
+                console.error("Error fetching data:", error.response?.data || error.message);
+            })
     }
 
-    return (<>
-        <Container fixed sx={{ my: "3%" }}>
-            <Stack gap={3} sx={{ bgcolor: "aliceblue", p: 5, borderRadius: "32px" }}>
-                <Stack direction={"row"} justifyContent={"space-between"} alignItems={"center"}>
-                    <Typography variant="h3">
-                        Transactions
-                    </Typography>
-                </Stack>
-                <Stack gap={2}>
-                    <Paper sx={{ width: "100%" }}>
-                        <TableContainer sx={{ maxHeight: 440 }}>
-                            <Table stickyHeader aria-label="sticky table">
-                                <TableHead>
-                                    <TableRow>
-                                        {columns.map((column) => (
-                                            <TableCell
-                                                key={column.id}
-                                                align={column.align}
-                                                style={{ minWidth: column.minWidth }}
-                                            >
-                                                {column.label}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {rows
-                                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                        .map((row) => {
-                                            return (
-                                                <TableRow hover role="checkbox" tabIndex={-1} key={row.code}>
-                                                    {columns.map((column) => {
-                                                        const value = row[column.id];
+    // useEffect(() => {
+    //     fetchJournalData();
+    //     fetchTransactionData();
+    // }, [])
+
+    function handleDelete(e) {
+        e.preventDefault();
+    }
+
+    function handleEdit() { }
+
+    useEffect(() => {
+        setRows({ date: "12-12-2022", account: "India", ref: "101", dr: "10", cr: "100000" })
+        console.log(rows)
+    }, [])
+
+    return (
+        <>
+            <ColorPalette>
+                <Container fixed sx={{ marginY: "3%" }}>
+                    <Stack gap={5}>
+                        <Stack alignItems={'center'} direction={'column'}>
+                            {/* TODO: Capitaize */}
+                            <Typography variant="h3"></Typography>
+                            <Typography variant="h3">Transaction</Typography>
+                            <Typography variant="h3"></Typography>
+                            <Divider
+                                sx={{
+                                    borderWidth: ".3vh",
+                                    width: "100%",
+                                }}
+                            />
+                        </Stack>
+                        <Stack>
+                            <Stack sx={{ display: "block", alignSelf: "end" }}>
+                                <Link to={`../transaction-line/${transaction_id}/create`}>
+                                    <Button>
+                                        Add Transaction Line
+                                    </Button>
+                                </Link>
+                                <Popup trigger={popup} setTrigger={setPopup} title="A">
+                                    <Stack>
+                                        <Typography>Hey</Typography>
+                                    </Stack>
+                                </Popup>
+                            </Stack>
+                        </Stack>
+                        <Stack>
+                            {rows.length ? (
+                                <Paper sx={{ width: "100%" }}>
+                                    <TableContainer sx={{ maxHeight: 440 }}>
+                                        <Table stickyHeader aria-label="sticky table">
+                                            <TableHead>
+                                                <TableRow>
+                                                    {columns.map((column) => (
+                                                        <TableCell
+                                                            key={column.id}
+                                                            align={column.align}
+                                                            style={{ minWidth: column.minWidth }}
+                                                        >
+                                                            {column.label}
+                                                        </TableCell>
+                                                    ))}
+                                                    <TableCell align="right">
+                                                        Action
+                                                    </TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {rows
+                                                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                                    .map((row) => {
                                                         return (
-                                                            <TableCell key={column.id} align={column.align}>
-                                                                <Link to={`/transaction/${row.id}`}>
-                                                                    {column.format && typeof value === 'number'
-                                                                        ? column.format(value)
-                                                                        : value}
-                                                                </Link>
-                                                            </TableCell>
+                                                            <TableRow hover role="checkbox" tabIndex={-1} key={row.code}>
+                                                                {columns.map((column) => {
+                                                                    const value = row[column.id];
+                                                                    return (
+                                                                        <TableCell key={column.id} align={column.align}>
+                                                                            {(value == row.id) ?
+                                                                                <Link to={`../transaction/${row.id}`}>
+                                                                                    {column.format && typeof value === 'number'
+                                                                                        ? column.format(value)
+                                                                                        : value}
+                                                                                </Link>
+                                                                                :
+                                                                                <>
+                                                                                    {column.format && typeof value === 'number'
+                                                                                        ? column.format(value)
+                                                                                        : value}
+                                                                                </>
+                                                                            }
+                                                                        </TableCell>
+                                                                    );
+                                                                })}
+                                                                <TableCell sx={{ minWidth: 100 }} align="right">
+                                                                    <Stack sx={{ display: "block" }}>
+                                                                        <Button onClick={handleEdit}><EditIcon /></Button>
+                                                                        <Button onClick={() => { setPopup(true) }}><DeleteForeverIcon /></Button>
+                                                                    </Stack>
+                                                                </TableCell>
+                                                            </TableRow>
                                                         );
                                                     })}
-                                                </TableRow>
-                                            );
-                                        })}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                        <TablePagination
-                            rowsPerPageOptions={[10, 25, 100]}
-                            component="div"
-                            count={rows.length}
-                            rowsPerPage={rowsPerPage}
-                            page={page}
-                            onPageChange={handleChangePage}
-                            onRowsPerPageChange={handleChangeRowsPerPage}
-                        />
-                    </Paper>
-                </Stack>
-            </Stack>
-        </Container >
-    </>)
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+                                    <TablePagination
+                                        rowsPerPageOptions={[10, 25, 100]}
+                                        component="div"
+                                        count={rows.length}
+                                        rowsPerPage={rowsPerPage}
+                                        page={page}
+                                        onPageChange={handleChangePage}
+                                        onRowsPerPageChange={handleChangeRowsPerPage}
+                                    />
+                                </Paper>
+                            ) : (
+                                <Typography>There is no Transaction in this journal</Typography>
+                            )}
+                        </Stack>
+                    </Stack>
+                </Container>
+            </ColorPalette>
+        </>
+    )
 }
