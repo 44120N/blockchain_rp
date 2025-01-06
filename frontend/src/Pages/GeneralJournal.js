@@ -31,6 +31,7 @@ export default function GeneralJournal() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [popup, setPopup] = useState(false);
+    const [popupId, setPopupId] = useState('');
     const [rows, setRows] = useState([]);
 
     const columns = [
@@ -58,13 +59,17 @@ export default function GeneralJournal() {
                 }
             }
         }
-    
         return cookieValue;
     }
     
     function fetchData() {
         const csrftoken = getCookie('csrftoken');
-        axios.get('/api/journal', {headers:{'X-CSRFTOKEN': csrftoken}})
+        axios.get('/api/journal', {
+            headers:{
+                'X-CSRFTOKEN': csrftoken,
+                "Content-Type": "multipart/form-data",
+            },
+        })
         .then(response => {
             setRows(response.data);
         })
@@ -87,9 +92,31 @@ export default function GeneralJournal() {
         setPage(0);
     };
 
-    function handleDelete(e) {
-        // TODO: Make delete function.
+    function handleDelete(journal_id) {
+        const csrftoken = getCookie('csrftoken');
+        axios.delete(
+            `/api/journal/?id=${journal_id}`, {
+            headers:{
+                'X-CSRFTOKEN': csrftoken,
+                "Content-Type": "multipart/form-data",
+            },
+        })
+        .then(response => {
+            return response.data
+        })
+        .then(()=>{
+            window.location.reload(false);
+        })
+        .catch(error => {
+            console.error("Error deleting data:", error.response?.data || error.message);
+        })
     }
+
+    const handleDeleteClick = (id) => {
+        setPopupId(id);
+        setPopup(true);
+    }
+    
     function handleEdit(journal_id) {
         redirect(`/journal/${journal_id}/update`)
     }
@@ -115,16 +142,17 @@ export default function GeneralJournal() {
                                         Add Journal
                                     </Button>
                                 </Link>
-                                <Popup trigger={popup} setTrigger={setPopup} title="Are you sure you want to delete this journal?">
-                                    <Stack>
-                                        <Typography>This action cannot be undone.</Typography>
-                                    </Stack>
-                                    <Stack>
-                                        <Button variant={"outlined"} sx={{ display: "block", alignSelf: "end" }} onClick={handleDelete}>Delete</Button>
-                                    </Stack>
-                                </Popup>
                             </Stack>
                         </Stack>
+                        <Popup trigger={popup} setTrigger={setPopup} title="Are you sure you want to delete this journal?">
+                            <Stack>
+                                <Typography>Do you want to delete this journal?</Typography>
+                                <Typography>This action cannot be undone.</Typography>
+                            </Stack>
+                            <Stack>
+                                <Button variant={"outlined"} sx={{ display: "block", alignSelf: "end" }} onClick={()=>{handleDelete(popupId)}}>Delete {popupId}</Button>
+                            </Stack>
+                        </Popup>
                         <Stack>
                             {rows.length ? (
                                 <Paper sx={{ width: "100%" }}>
@@ -172,10 +200,10 @@ export default function GeneralJournal() {
                                                                         </TableCell>
                                                                     );
                                                                 })}
-                                                                <TableCell sx={{ minWidth: 100 }} align="right">
+                                                                <TableCell sx={{ minWidth: 100 }} align="right" key={`api-${row.id}`}>
                                                                     <Stack flexWrap={'wrap'} direction={'row'} gap={1} justifyContent={'flex-end'}>
                                                                         <Button sx={{p:0, width:'auto', minWidth:0}} onClick={()=>{handleEdit(row.id)}}><EditIcon /></Button>
-                                                                        <Button sx={{p:0, width:'auto', minWidth:0}} onClick={() => { setPopup(true) }}><DeleteForeverIcon /></Button>
+                                                                        <Button sx={{p:0, width:'auto', minWidth:0}} onClick={() => { handleDeleteClick(row.id) }}><DeleteForeverIcon /></Button>
                                                                     </Stack>
                                                                 </TableCell>
                                                             </TableRow>

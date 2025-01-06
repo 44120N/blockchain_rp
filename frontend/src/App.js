@@ -18,24 +18,22 @@ import { AddTransaction } from "./Pages/ChangeTransaction";
 
 export default function App() {
     return (
-        <VariableProvider>
-            <Router>
-                <Routes>
-                    <Route exact path="/" Component={Home} />
-                    <Route path="/login" Component={Login} />
-                    <Route path="/signup" Component={SignUp} />
-                    <Route path="/journal" Component={GeneralJournal} />
-                    <Route path="/journal/:journal_id" Component={SpecificJournal} />
-                    <Route path="/journal/create" Component={AddJournal} />
-                    <Route path="/journal/:journal_id/update" Component={UpdateJournal} />
+        <Router>
+            <Routes>
+                <Route exact path="/" Component={Home} />
+                <Route path="/login" Component={Login} />
+                <Route path="/signup" Component={SignUp} />
+                <Route path="/journal" Component={GeneralJournal} />
+                <Route path="/journal/:journal_id" Component={SpecificJournal} />
+                <Route path="/journal/create" Component={AddJournal} />
+                <Route path="/journal/:journal_id/update" Component={UpdateJournal} />
 
-                    <Route path="/account" Component={Account} />
-                    <Route path="/transaction" Component={Transaction} />
-                    <Route path="/transaction/:journal_id" Component={Transaction} />
-                    <Route path="/transaction/:journal_id/create" Component={AddTransaction} />
-                </Routes>
-            </Router>
-        </VariableProvider>
+                <Route path="/account" Component={Account} />
+                <Route path="/transaction" Component={Transaction} />
+                <Route path="/transaction/:journal_id" Component={Transaction} />
+                <Route path="/transaction/:journal_id/create" Component={AddTransaction} />
+            </Routes>
+        </Router>
     );
 }
 

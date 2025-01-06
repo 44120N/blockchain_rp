@@ -87,7 +87,8 @@ class GeneralJournalAPI(APIView):
         return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
 class TransactionAPI(APIView):
-    lookup_url_kwarg = 'id'
+    lookup_url_kwarg_journal = 'journal_id'
+    lookup_url_kwarg_transaction = 'transaction_id'
     
     def get_serializer_class(self, method):
         if method in ['POST', 'PUT']:
@@ -95,12 +96,22 @@ class TransactionAPI(APIView):
         return TransactionSerializer
 
     def get(self, request, format=None):
-        transaction_id = request.GET.get(self.lookup_url_kwarg)
+        journal_id = request.GET.get(self.lookup_url_kwarg_journal)
+        transaction_id = request.GET.get(self.lookup_url_kwarg_transaction)
+        
+        if journal_id:
+            transaction = get_object_or_404(Transaction, journal=journal_id)
+            serializer = self.get_serializer_class('GET')(transaction, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
         if transaction_id:
             transaction = get_object_or_404(Transaction, id=transaction_id)
-            data = self.get_serializer_class('GET')(transaction).data
-            return Response(data, status=status.HTTP_200_OK)
-        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+            serializer = self.get_serializer_class('GET')(transaction)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        transaction = Transaction.objects.all()
+        serializer = self.get_serializer_class('GET')(transaction, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, format=None):
         serializer = self.get_serializer_class('POST')(data=request.data)

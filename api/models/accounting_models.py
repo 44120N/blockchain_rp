@@ -31,7 +31,7 @@ class GeneralJournal(models.Model):
     
     def save(self, *args, **kwargs):
         self.balance = sum(tx.total_debits() for tx in self.transactions.all())
-        super().save(*args, **kwargs)
+        super(GeneralJournal, self).save(*args, **kwargs)
 
 class Transaction(models.Model):
     id = models.CharField(primary_key=True, max_length=255, editable=False)

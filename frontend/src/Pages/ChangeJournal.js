@@ -36,12 +36,13 @@ export function AddJournal() {
         formData.append('company', company);
         formData.append('period', dayjs(date).format("YYYY-MM-DD"));
 
-        const response = axios.post(
+        axios.post(
             "/api/journal/",
             formData,
             {
                 headers: {
                     "X-CSRFToken": csrftoken,
+                    "Content-Type": "multipart/form-data",
                 },
             }
         )
@@ -146,7 +147,7 @@ export function UpdateJournal() {
         formData.append('company', company);
         formData.append('period', dayjs(date).format("YYYY-MM-DD"));
 
-        const response = axios.patch(
+        axios.patch(
             `/api/journal/?id=${journal_id}`,
             formData,
             {
