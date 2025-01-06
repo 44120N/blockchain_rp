@@ -11,5 +11,6 @@ urlpatterns = [
     path('account', index, name='account'),
     path('transaction', index, name='transaction'),
     path('transaction/<str:journal_id>', index),
+    path('transaction/<str:journal_id>/create', index),
     path('transaction/<str:transaction_id>/update', index),
 ]
