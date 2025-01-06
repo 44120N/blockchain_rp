@@ -71,6 +71,11 @@ export function AddTransactionLine() {
                         <Typography variant="h3">
                             <Stack direction={"row"} sx={{ justifyContent: "space-between" }}>
                                 Add Transaction Line
+                                <Stack sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    <Typography variant="h6" sx={{ backgroundColor: "#0074D9", color: "white", px: 2, borderRadius: "16px" }}>
+                                        {transaction_id}
+                                    </Typography>
+                                </Stack>
                             </Stack>
                         </Typography>
                         <Stack>
@@ -107,7 +112,7 @@ export function UpdateTransactionLine() {
     const redirect = useNavigate();
     const [company, setCompany] = useState("");
     const [date, setDate] = useState(null);
-    const { journal_id } = useParams();
+    const { transaction_id } = useParams();
 
     const getCookie = (name) => {
         let cookieValue = null;
@@ -124,21 +129,21 @@ export function UpdateTransactionLine() {
         return cookieValue;
     }
 
-    function fetchData() {
-        const csrftoken = getCookie('csrftoken');
-        axios.get(`/api/journal/?id=${journal_id}`, { headers: { 'X-CSRFTOKEN': csrftoken } })
-            .then(response => {
-                setCompany(response.data.company);
-                setDate(dayjs(response.data.period));
-            })
-            .catch(error => {
-                console.error("Error fetching data:", error.response?.data || error.message);
-            })
-    }
+    // function fetchData() {
+    //     const csrftoken = getCookie('csrftoken');
+    //     axios.get(`/api/journal/?id=${transaction_id}`, { headers: { 'X-CSRFTOKEN': csrftoken } })
+    //         .then(response => {
+    //             setCompany(response.data.company);
+    //             setDate(dayjs(response.data.period));
+    //         })
+    //         .catch(error => {
+    //             console.error("Error fetching data:", error.response?.data || error.message);
+    //         })
+    // }
 
-    useEffect(() => {
-        fetchData();
-    }, [])
+    // useEffect(() => {
+    //     fetchData();
+    // }, [])
 
     function handleSubmit(e) {
         e.preventDefault();
@@ -181,10 +186,10 @@ export function UpdateTransactionLine() {
                     <Stack sx={{ backgroundColor: "aliceblue", p: 5, borderRadius: "32px" }} gap={3}>
                         <Typography variant="h3">
                             <Stack direction={"row"} sx={{ justifyContent: "space-between" }}>
-                                Edit Journal
+                                Edit Transaction Line
                                 <Stack sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                                     <Typography variant="h6" sx={{ backgroundColor: "#0074D9", color: "white", px: 2, borderRadius: "16px" }}>
-                                        {journal_id}
+                                        {transaction_id}
                                     </Typography>
                                 </Stack>
                             </Stack>
@@ -208,7 +213,7 @@ export function UpdateTransactionLine() {
                                 </Button>
                             </Link>
                             <Button variant="contained" onClick={handleSubmit}>
-                                Apply Changes
+                                Save Changes
                             </Button>
                         </Stack>
                     </Stack >
