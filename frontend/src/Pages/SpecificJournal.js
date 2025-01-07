@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
     Container,
     Typography,
@@ -18,21 +18,16 @@ import {
     Button,
     TextField
 } from "@mui/material";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import ColorPalette from "../Components/ColorPalette";
 import Popup from "../Components/Popup";
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import EditIcon from '@mui/icons-material/Edit';
 import axios from "axios";
-
-
-import { useParams } from "react-router-dom";
-
+import dayjs from "dayjs";
 
 export default function SpecificJournal() {
-    // Journal data
-    const [journalId, setJournalId] = useState('')
+    const [journalId, setJournalId] = useState('');
     const [company, setCompany] = useState('');
     const [period, setPeriod] = useState('');
     
@@ -41,7 +36,7 @@ export default function SpecificJournal() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [popup, setPopup] = useState(false);
     const { journal_id } = useParams();
-    
+
     const columns = [
         { id: 'date', label: 'Date', minWidth: 100 },
         { id: 'account', label: 'Account', minWidth: 200 },
@@ -86,22 +81,7 @@ export default function SpecificJournal() {
             setJournalId(response.data.id);
             setCompany(response.data.company);
             setPeriod(response.data.period);
-        })
-        .catch(error => {
-            console.error("Error fetching data:", error.response?.data || error.message);
-        })
-    }
-
-    function fetchTransactionData() {
-        const csrftoken = getCookie('csrftoken');
-        axios.get(`/api/transaction/?journal_id=${journal_id}`, {
-            headers:{
-                'X-CSRFTOKEN': csrftoken,
-                "Content-Type": "multipart/form-data",
-            },
-        })
-        .then(response => {
-            setRows(response.data);
+            setRows(response.data.transactions);
         })
         .catch(error => {
             console.error("Error fetching data:", error.response?.data || error.message);
@@ -110,7 +90,6 @@ export default function SpecificJournal() {
 
     useEffect(()=>{
         fetchJournalData();
-        fetchTransactionData();
     }, [])
 
     function handleDelete(e) {
@@ -126,7 +105,7 @@ export default function SpecificJournal() {
                 <Container fixed sx={{ marginY: "3%" }}>
                     <Stack gap={5}>
                         <Stack alignItems={'center'} direction={'column'}>
-                            {/* TODO: Capitaize */}
+                            {/* TODO: Capitalize */}
                             <Typography variant="h3">{company}</Typography>
                             <Typography variant="h3">General Journal</Typography>
                             <Typography variant="h3">{period}</Typography>
@@ -177,16 +156,16 @@ export default function SpecificJournal() {
                                                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                                                     .map((row) => {
                                                         return (
-                                                            <TableRow hover role="checkbox" tabIndex={-1} key={row.code}>
+                                                            <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
                                                                 {columns.map((column) => {
                                                                     const value = row[column.id];
                                                                     return (
-                                                                        <TableCell key={column.id} align={column.align}>
-                                                                            {(value == row.id) ?
-                                                                                <Link to={`../transaction/${row.id}`}>
-                                                                                    {column.format && typeof value === 'number'
-                                                                                        ? column.format(value)
-                                                                                        : value}
+                                                                        <TableCell key={`${row.id}-${column.id}`} align={column.align}>
+                                                                            {(column.id==='date') ?
+                                                                                <Link to={`/transaction/${row.id}`}>
+                                                                                    {dayjs(value).format("DD/MM/YYYY")}
+                                                                                    <br/>
+                                                                                    {dayjs(value).format("HH:mm")}
                                                                                 </Link>
                                                                                 :
                                                                                 <>

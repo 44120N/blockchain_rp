@@ -78,7 +78,7 @@ class GeneralJournalFormSerializer(serializers.ModelSerializer):
 class TransactionFormSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
-        fields = ['description', 'date']
+        fields = ['description', 'date', 'journal']
 
 class TransactionLineFormSerializer(serializers.ModelSerializer):
     class Meta:
