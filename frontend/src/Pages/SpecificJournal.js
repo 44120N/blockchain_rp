@@ -24,10 +24,7 @@ import Popup from "../Components/Popup";
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import EditIcon from '@mui/icons-material/Edit';
 import axios from "axios";
-
 import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
 
 export default function SpecificJournal() {
     const [journalId, setJournalId] = useState('');
@@ -40,9 +37,6 @@ export default function SpecificJournal() {
     const [popup, setPopup] = useState(false);
     const { journal_id } = useParams();
 
-    dayjs.extend(utc);
-    dayjs.extend(timezone);
-    
     const columns = [
         { id: 'date', label: 'Date', minWidth: 100 },
         { id: 'account', label: 'Account', minWidth: 200 },
@@ -169,9 +163,9 @@ export default function SpecificJournal() {
                                                                         <TableCell key={`${row.id}-${column.id}`} align={column.align}>
                                                                             {(column.id==='date') ?
                                                                                 <Link to={`/transaction/${row.id}`}>
-                                                                                    {dayjs(value).tz("Asia/Jakarta").format("DD/MM/YYYY")}
+                                                                                    {dayjs(value).format("DD/MM/YYYY")}
                                                                                     <br/>
-                                                                                    {dayjs(value).tz("Asia/Jakarta").format("HH:mm")}
+                                                                                    {dayjs(value).format("HH:mm")}
                                                                                 </Link>
                                                                                 :
                                                                                 <>
