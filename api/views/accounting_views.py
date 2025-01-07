@@ -87,6 +87,7 @@ class GeneralJournalAPI(APIView):
         return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
 class TransactionAPI(APIView):
+    parser_classes = [MultiPartParser]
     lookup_url_kwarg_journal = 'journal_id'
     lookup_url_kwarg_transaction = 'transaction_id'
     
@@ -114,11 +115,20 @@ class TransactionAPI(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, format=None):
-        serializer = self.get_serializer_class('POST')(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        journal_id = request.GET.get(self.lookup_url_kwarg_journal)
+        if journal_id:
+            journal = GeneralJournal.objects.filter(id=journal_id)
+            if journal.exists():
+                data = request.data.copy()
+                data['journal'] = journal_id
+                
+                serializer = self.get_serializer_class('POST')(data=data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Transaction not found"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "Transaction id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, format=None):
         transaction_id = request.data.get(self.lookup_url_kwarg)

@@ -1,16 +1,19 @@
 import React from "react";
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { Container, Stack, Typography, TextField, Button } from "@mui/material";
+import axios from "axios";
+
+import dayjs from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider/LocalizationProvider";
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DatePicker } from "@mui/x-date-pickers/DatePicker"
-import { Container, Stack, Typography, TextField, Button } from "@mui/material";
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 
 export function AddTransaction() {
-    const [open, setOpen] = useState(false);
-    const [description, setDescription] = useState(false);
+    const redirect = useNavigate();
+    const [description, setDescription] = useState("");
     const [date, setDate] = useState(null);
-    const { address } = useParams()
+    const { journal_id } = useParams()
 
     const getCookie = (name) => {
         let cookieValue = null;
@@ -24,7 +27,6 @@ export function AddTransaction() {
                 }
             }
         }
-
         return cookieValue;
     }
 
@@ -34,36 +36,33 @@ export function AddTransaction() {
         const csrftoken = getCookie('csrftoken');
 
         const formData = new FormData();
-        formData.append('journal', address)
         formData.append('description', description);
-        formData.append('date', date);
+        formData.append('date', dayjs(date).format("YYYY-MM-DDTHH:mm:ssZ"));
 
         const response = axios.post(
-            "/api/transaction/",
+            `/api/transaction/?journal_id=${journal_id}`,
             formData,
             {
                 headers: {
                     "X-CSRFToken": csrftoken,
+                    "Content-Type": "multipart/form-data",
                 },
             }
         )
-            .then(function (response) {
-                if (response.data) {
-                    saveData('login_data', JSON.stringify(response.data), 60);
-                    redirect('/');
-                }
-            })
-            .catch(function (error) {
-                if (error.response && error.response.data) {
-                    const errors = error.response.data;
-                    alert("Form validation failed:\n" + JSON.stringify(errors));
-                } else {
-                    console.error("Error submitting form:", error);
-                    alert("Error submitting form. Please try again later.");
-                }
-            });
-
-        setOpen(false);
+        .then(response => {
+            if (response.data) {
+                redirect(`../journal/${journal_id}`)
+            }
+        })
+        .catch(error => {
+            if (error.response && error.response.data) {
+                const errors = error.response.data;
+                alert("Form validation failed:\n" + JSON.stringify(errors));
+            } else {
+                console.error("Error submitting form:", error);
+                alert("Error submitting form. Please try again later.");
+            }
+        });
     }
 
     return (
@@ -76,7 +75,7 @@ export function AddTransaction() {
                                 Create Transaction
                                 <Stack sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                                     <Typography variant="h6" sx={{ backgroundColor: "#0074D9", color: "white", px: 2, borderRadius: "16px" }}>
-                                        # {address}
+                                        # {journal_id}
                                     </Typography>
                                 </Stack>
                             </Stack>
@@ -86,20 +85,20 @@ export function AddTransaction() {
                                 onChange={(e) => setDescription(e.target.value)} required />
                         </Stack>
                         <Stack>
-                            <DatePicker
-                                label="Period"
+                            <DateTimePicker
+                                label="Period *"
                                 value={date}
                                 onChange={(e) => setDate(e)}
                                 required
                             />
                         </Stack>
                         <Stack direction={"row"} justifyContent={"end"} gap={1}>
-                            <Link to={`../journal/${address}`}>
+                            <Link to={`../journal/${journal_id}`}>
                                 <Button variant="contained">
                                     Cancel
                                 </Button>
                             </Link>
-                            <Button variant="contained">
+                            <Button variant="contained" onClick={handleSubmit}>
                                 Create
                             </Button>
                         </Stack>
@@ -115,7 +114,7 @@ export function UpdateTransaction() {
     const [company, setCompany] = useState("");
     const [date, setDate] = useState(null);
 
-    const { address } = useParams()
+    const { journal_id } = useParams()
 
     const getCookie = (name) => {
         let cookieValue = null;
@@ -180,7 +179,7 @@ export function UpdateTransaction() {
                                 Edit Transaction
                                 <Stack sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                                     <Typography variant="h6" sx={{ backgroundColor: "#0074D9", color: "white", px: 2, borderRadius: "16px" }}>
-                                        # {address}
+                                        # {journal_id}
                                     </Typography>
                                 </Stack>
                             </Stack>
@@ -190,7 +189,7 @@ export function UpdateTransaction() {
                                 onChange={(e) => setCompany(e.target.value)} required />
                         </Stack>
                         <Stack>
-                            <DatePicker
+                            <DateTimePicker
                                 label="Period"
                                 value={date}
                                 onChange={(e) => setDate(e)}
@@ -198,7 +197,7 @@ export function UpdateTransaction() {
                             />
                         </Stack>
                         <Stack direction={"row"} justifyContent={"end"} gap={1}>
-                            <Link to={`../journal/${address}`}>
+                            <Link to={`../journal/${journal_id}`}>
                                 <Button variant="contained">
                                     Cancel
                                 </Button>
