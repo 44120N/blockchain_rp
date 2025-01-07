@@ -12,8 +12,8 @@ import Account from "./Pages/Account";
 import Transaction from "./Pages/Transaction";
 import { AddJournal, UpdateJournal } from "./Pages/ChangeJournal";
 import SpecificJournal from "./Pages/SpecificJournal";
-import SpecificTransaction from "./Pages/SpecificTransaction";
-import { AddTransaction } from "./Pages/ChangeTransaction";
+import { AddTransaction, UpdateTransaction } from "./Pages/ChangeTransaction";
+import { AddTransactionLine, UpdateTransactionLine } from "./Pages/ChangeTransactionLine";
 
 
 export default function App() {
@@ -29,9 +29,12 @@ export default function App() {
                 <Route path="/journal/:journal_id/update" Component={UpdateJournal} />
 
                 <Route path="/account" Component={Account} />
-                <Route path="/transaction" Component={Transaction} />
                 <Route path="/transaction/:journal_id" Component={Transaction} />
                 <Route path="/transaction/:journal_id/create" Component={AddTransaction} />
+                <Route path="/transaction/:journal_id/update" Component={UpdateTransaction} />
+                <Route path="/transaction-line/:transaction_id/create" Component={AddTransactionLine} />
+                <Route path="/transaction-line/:transaction_id/update" Component={UpdateTransactionLine} />
+
             </Routes>
         </Router>
     );
