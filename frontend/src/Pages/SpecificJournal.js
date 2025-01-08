@@ -152,40 +152,91 @@ export default function SpecificJournal() {
                                                 </TableRow>
                                             </TableHead>
                                             <TableBody>
-                                                {rows
-                                                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                                    .map((row) => {
-                                                        return (
-                                                            <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
-                                                                {columns.map((column) => {
-                                                                    const value = row[column.id];
+                                                {rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
+                                                    return (
+                                                        <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
+                                                            {columns.map((column) => {
+                                                                if (column.id === 'account') {
                                                                     return (
                                                                         <TableCell key={`${row.id}-${column.id}`} align={column.align}>
-                                                                            {(column.id==='date') ?
-                                                                                <Link to={`/transaction/${row.id}`}>
-                                                                                    {dayjs(value).format("DD/MM/YYYY")}
-                                                                                    <br/>
-                                                                                    {dayjs(value).format("HH:mm")}
-                                                                                </Link>
-                                                                                :
-                                                                                <>
-                                                                                    {column.format && typeof value === 'number'
-                                                                                        ? column.format(value)
-                                                                                        : value}
-                                                                                </>
-                                                                            }
+                                                                            {row.lines.map((line, index) => (
+                                                                                <Typography
+                                                                                    key={`${row.id}-line-${index}`}
+                                                                                    sx={{
+                                                                                        marginLeft: line.is_debit ? 0 : "1em",
+                                                                                    }}
+                                                                                >
+                                                                                    {line.account.name}
+                                                                                </Typography>
+                                                                            ))}
+                                                                            ({row.description})
                                                                         </TableCell>
                                                                     );
-                                                                })}
-                                                                <TableCell sx={{ minWidth: 100 }} align="right">
-                                                                    <Stack sx={{ display: "block" }}>
-                                                                        <Button onClick={handleEdit}><EditIcon /></Button>
-                                                                        <Button onClick={() => { setPopup(true) }}><DeleteForeverIcon /></Button>
-                                                                    </Stack>
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        );
-                                                    })}
+                                                                } else if (column.id === 'dr') {
+                                                                    const totalDebit = row.lines
+                                                                        .filter((line) => line.is_debit)
+                                                                        .reduce((sum, line) => sum + line.value, 0);
+                                                                    return (
+                                                                        totalDebit?
+                                                                        <>
+                                                                            <TableCell key={`${row.id}-${column.id}`} align={column.align}>
+                                                                                {totalDebit.toFixed(2)}
+                                                                            </TableCell>
+                                                                        </>:
+                                                                        <>
+                                                                            <TableCell key={`${row.id}-${column.id}`} align={column.align}>
+                                                                            </TableCell>
+                                                                        </>
+                                                                    );
+                                                                } else if (column.id === 'cr') {
+                                                                    const totalCredit = row.lines
+                                                                        .filter((line) => !line.is_debit)
+                                                                        .reduce((sum, line) => sum + line.value, 0);
+                                                                    return (
+                                                                        totalCredit?
+                                                                        <>
+                                                                            <TableCell key={`${row.id}-${column.id}`} align={column.align}>
+                                                                                {totalCredit.toFixed(2)}
+                                                                            </TableCell>
+                                                                        </>:
+                                                                        <>
+                                                                            <TableCell key={`${row.id}-${column.id}`} align={column.align}>
+                                                                            </TableCell>
+                                                                        </>
+                                                                    );
+                                                                } else if (column.id === 'date') {
+                                                                    return (
+                                                                        <TableCell key={`${row.id}-${column.id}`} align={column.align}>
+                                                                            <Link to={`/transaction/${row.id}`}>
+                                                                                {dayjs(row[column.id]).format("DD/MM/YYYY")}
+                                                                                <br />
+                                                                                {dayjs(row[column.id]).format("HH:mm")}
+                                                                            </Link>
+                                                                        </TableCell>
+                                                                    );
+                                                                } else {
+                                                                    return (
+                                                                        <TableCell key={`${row.id}-${column.id}`} align={column.align}>
+                                                                            {column.format && typeof row[column.id] === "number"
+                                                                                ? column.format(row[column.id])
+                                                                                : row[column.id]}
+                                                                        </TableCell>
+                                                                    );
+                                                                }
+                                                            })}
+                                                            <TableCell sx={{ minWidth: 100 }} align="right">
+                                                                <Stack sx={{ display: "block" }}>
+                                                                    <Button onClick={handleEdit}>
+                                                                        <EditIcon />
+                                                                    </Button>
+                                                                    <Button onClick={() => setPopup(true)}>
+                                                                        <DeleteForeverIcon />
+                                                                    </Button>
+                                                                </Stack>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })}
                                             </TableBody>
                                         </Table>
                                     </TableContainer>

@@ -28,10 +28,6 @@ import EditIcon from '@mui/icons-material/Edit';
 import { useParams } from "react-router-dom";
 
 export default function Transaction() {
-    const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
-    const [period, setPeriod] = useState("");
-
     const [rows, setRows] = useState([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -71,24 +67,6 @@ export default function Transaction() {
         }
         return cookieValue;
     }
-
-    // function fetchJournalData() {
-    //     const csrftoken = getCookie('csrftoken');
-    //     axios.get(`/api/transaction?id=${journal_id}`, {
-    //         headers: {
-    //             'X-CSRFTOKEN': csrftoken,
-    //             "Content-Type": "multipart/form-data",
-    //         },
-    //     })
-    //         .then(response => {
-    //             setJournalId(response.data.id);
-    //             setCompany(response.data.company);
-    //             setPeriod(response.data.period);
-    //         })
-    //         .catch(error => {
-    //             console.error("Error fetching data:", error.response?.data || error.message);
-    //         })
-    // }
 
     function fetchTransactionData() {
         const csrftoken = getCookie('csrftoken');

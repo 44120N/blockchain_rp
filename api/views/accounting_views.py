@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
+import json
 
 from django.shortcuts import get_object_or_404
 from ..forms import GeneralJournalForm, TransactionForm, TransactionLineForm, AccountForm
@@ -27,6 +28,13 @@ class GeneralJournalAPI(APIView):
         if journal_id:
             journal = get_object_or_404(GeneralJournal, id=journal_id)
             serializer = self.get_serializer_class('GET')(journal)
+            
+            data = {
+                'company': serializer.data['company'],
+                'period': serializer.data['period'],
+                'transactions': serializer.data['transactions'],
+            }
+            print(data)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             journals = GeneralJournal.objects.all()
