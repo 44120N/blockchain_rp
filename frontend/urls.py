@@ -8,7 +8,12 @@ urlpatterns = [
     path('journal', index, name='journal'),
     path('journal/<str:journal_id>', index, name='journal'),
     path('journal/<str:journal_id>/update', index, name='journal'),
+    
     path('account', index, name='account'),
+    path('account/<str:account_id>', index, name='account'),
+    path('account/<str:account_id>/update', index, name='account'),
+    path('account/create', index, name='account'),
+    
     path('transaction/<str:journal_id>', index),
     path('transaction/<str:journal_id>/create', index),
     path('transaction/<str:journal_id>/update', index),
