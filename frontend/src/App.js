@@ -36,7 +36,7 @@ export default function App() {
 
                 <Route path="/transaction/:journal_id" Component={Transaction} />
                 <Route path="/transaction/:journal_id/create" Component={AddTransaction} />
-                <Route path="/transaction/:journal_id/update" Component={UpdateTransaction} />
+                <Route path="/transaction/:transaction_id/update" Component={UpdateTransaction} />
                 <Route path="/transaction-line/:transaction_id/create" Component={AddTransactionLine} />
                 <Route path="/transaction-line/:transaction_id/update" Component={UpdateTransactionLine} />
 

@@ -29,12 +29,12 @@ class GeneralJournalAPI(APIView):
             journal = get_object_or_404(GeneralJournal, id=journal_id)
             serializer = self.get_serializer_class('GET')(journal)
             
-            data = {
-                'company': serializer.data['company'],
-                'period': serializer.data['period'],
-                'transactions': serializer.data['transactions'],
-            }
-            print(data)
+            # data = {
+            #     'company': serializer.data['company'],
+            #     'period': serializer.data['period'],
+            #     'transactions': serializer.data['transactions'],
+            # }
+            # print(data)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             journals = GeneralJournal.objects.all()
@@ -42,6 +42,9 @@ class GeneralJournalAPI(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request, format=None):
+        # It needs blockchain_id to create the journal
+        # blockchain_id = request.GET.get(self.lookup_url_kwarg)
+        # blockchain = get_object_or_404(Blockchain, id =blockchain_id)
         serializer = self.get_serializer_class('POST')(data=request.data)
         if serializer.is_valid():
             if GeneralJournal.objects.filter(
@@ -100,7 +103,7 @@ class TransactionAPI(APIView):
     lookup_url_kwarg_transaction = 'transaction_id'
     
     def get_serializer_class(self, method):
-        if method in ['POST', 'PUT']:
+        if method in ['POST', 'PUT', 'PATCH']:
             return TransactionFormSerializer
         return TransactionSerializer
 
@@ -121,7 +124,7 @@ class TransactionAPI(APIView):
         transaction = Transaction.objects.all()
         serializer = self.get_serializer_class('GET')(transaction, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
+    
     def post(self, request, format=None):
         journal_id = request.GET.get(self.lookup_url_kwarg_journal)
         if journal_id:
@@ -137,20 +140,31 @@ class TransactionAPI(APIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             return Response({"error": "Transaction not found"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"error": "Transaction id is required"}, status=status.HTTP_400_BAD_REQUEST)
-
+    
     def put(self, request, format=None):
-        transaction_id = request.data.get(self.lookup_url_kwarg)
+        transaction_id = request.GET.get(self.lookup_url_kwarg_transaction)
         if transaction_id:
             transaction = get_object_or_404(Transaction, id=transaction_id)
-            serializer = self.get_serializer_class('PUT')(transaction, data=request.data, partial=True)
+            serializer = self.get_serializer_class('PUT')(transaction, data=request.data)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
-
+    
+    def patch(self, request, format=None):
+        transaction_id = request.GET.get(self.lookup_url_kwarg_transaction)
+        if transaction_id:
+            transaction = get_object_or_404(Transaction, id=transaction_id)
+            serializer = self.get_serializer_class('PATCH')(transaction, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+    
     def delete(self, request, format=None):
-        transaction_id = request.GET.get(self.lookup_url_kwarg)
+        transaction_id = request.GET.get(self.lookup_url_kwarg_transaction)
         if transaction_id:
             transaction = get_object_or_404(Transaction, id=transaction_id)
             transaction.delete()

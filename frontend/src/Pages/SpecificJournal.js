@@ -18,7 +18,7 @@ import {
     Button,
     TextField
 } from "@mui/material";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import ColorPalette from "../Components/ColorPalette";
 import Popup from "../Components/Popup";
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
@@ -27,7 +27,9 @@ import axios from "axios";
 import dayjs from "dayjs";
 
 export default function SpecificJournal() {
+    const redirect = useNavigate();
     const [journalId, setJournalId] = useState('');
+    const [popupId, setPopupId] = useState('')
     const [company, setCompany] = useState('');
     const [period, setPeriod] = useState('');
     
@@ -92,12 +94,34 @@ export default function SpecificJournal() {
         fetchJournalData();
     }, [])
 
-    function handleDelete(e) {
-        e.preventDefault();
+    function handleDelete(transaction_id) {
+        const csrftoken = getCookie('csrftoken');
+        axios.delete(
+            `/api/transaction/?transaction_id=${transaction_id}`, {
+            headers:{
+                'X-CSRFTOKEN': csrftoken,
+                "Content-Type": "multipart/form-data",
+            },
+        })
+        .then(response => {
+            return response.data
+        })
+        .then(()=>{
+            window.location.reload(false);
+        })
+        .catch(error => {
+            console.error("Error deleting data:", error.response?.data || error.message);
+        })
     }
 
-    function handleEdit() { }
-
+    const handleDeleteClick = (id) => {
+        setPopupId(id);
+        setPopup(true);
+    }
+    
+    function handleEdit(transaction_id) {
+        redirect(`/transaction/${transaction_id}/update`)
+    }
 
     return (
         <>
@@ -123,13 +147,17 @@ export default function SpecificJournal() {
                                         Add Transaction
                                     </Button>
                                 </Link>
-                                <Popup trigger={popup} setTrigger={setPopup} title="A">
-                                    <Stack>
-                                        <Typography>Hey</Typography>
-                                    </Stack>
-                                </Popup>
                             </Stack>
                         </Stack>
+                        <Popup trigger={popup} setTrigger={setPopup} title="Are you sure you want to delete this journal?">
+                            <Stack>
+                                <Typography>Do you want to delete this journal?</Typography>
+                                <Typography>This action cannot be undone.</Typography>
+                            </Stack>
+                            <Stack>
+                                <Button variant={"outlined"} sx={{ display: "block", alignSelf: "end" }} onClick={()=>{handleDelete(popupId)}}>Delete</Button>
+                            </Stack>
+                        </Popup>
                         <Stack>
                             {rows.length?(
                                 <Paper sx={{ width: "100%" }}>
@@ -161,7 +189,7 @@ export default function SpecificJournal() {
                                                                         <TableCell key={`${row.id}-${column.id}`} align={column.align}>
                                                                             {row.lines.map((line, index) => (
                                                                                 <Typography
-                                                                                    key={`${row.id}-line-${index}`}
+                                                                                    key={`${row.id}-${column.id}-${index}`}
                                                                                     sx={{
                                                                                         marginLeft: line.is_debit ? 0 : "1em",
                                                                                     }}
@@ -178,15 +206,12 @@ export default function SpecificJournal() {
                                                                         .reduce((sum, line) => sum + line.value, 0);
                                                                     return (
                                                                         totalDebit?
-                                                                        <>
                                                                             <TableCell key={`${row.id}-${column.id}`} align={column.align}>
                                                                                 {totalDebit.toFixed(2)}
                                                                             </TableCell>
-                                                                        </>:
-                                                                        <>
+                                                                        :
                                                                             <TableCell key={`${row.id}-${column.id}`} align={column.align}>
                                                                             </TableCell>
-                                                                        </>
                                                                     );
                                                                 } else if (column.id === 'cr') {
                                                                     const totalCredit = row.lines
@@ -194,15 +219,12 @@ export default function SpecificJournal() {
                                                                         .reduce((sum, line) => sum + line.value, 0);
                                                                     return (
                                                                         totalCredit?
-                                                                        <>
                                                                             <TableCell key={`${row.id}-${column.id}`} align={column.align}>
                                                                                 {totalCredit.toFixed(2)}
                                                                             </TableCell>
-                                                                        </>:
-                                                                        <>
+                                                                        :
                                                                             <TableCell key={`${row.id}-${column.id}`} align={column.align}>
                                                                             </TableCell>
-                                                                        </>
                                                                     );
                                                                 } else if (column.id === 'date') {
                                                                     return (
@@ -224,12 +246,12 @@ export default function SpecificJournal() {
                                                                     );
                                                                 }
                                                             })}
-                                                            <TableCell sx={{ minWidth: 100 }} align="right">
+                                                            <TableCell sx={{ minWidth: 100 }} align="right" key={`api-${row.id}`}>
                                                                 <Stack sx={{ display: "block" }}>
-                                                                    <Button onClick={handleEdit}>
+                                                                    <Button onClick={()=>{handleEdit(row.id)}}>
                                                                         <EditIcon />
                                                                     </Button>
-                                                                    <Button onClick={() => setPopup(true)}>
+                                                                    <Button onClick={()=>{handleDeleteClick(row.id)}}>
                                                                         <DeleteForeverIcon />
                                                                     </Button>
                                                                 </Stack>

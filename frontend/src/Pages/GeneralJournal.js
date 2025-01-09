@@ -150,7 +150,7 @@ export default function GeneralJournal() {
                                 <Typography>This action cannot be undone.</Typography>
                             </Stack>
                             <Stack>
-                                <Button variant={"outlined"} sx={{ display: "block", alignSelf: "end" }} onClick={()=>{handleDelete(popupId)}}>Delete {popupId}</Button>
+                                <Button variant={"outlined"} sx={{ display: "block", alignSelf: "end" }} onClick={()=>{handleDelete(popupId)}}>Delete</Button>
                             </Stack>
                         </Popup>
                         <Stack>
@@ -203,7 +203,7 @@ export default function GeneralJournal() {
                                                                 <TableCell sx={{ minWidth: 100 }} align="right" key={`api-${row.id}`}>
                                                                     <Stack flexWrap={'wrap'} direction={'row'} gap={1} justifyContent={'flex-end'}>
                                                                         <Button sx={{p:0, width:'auto', minWidth:0}} onClick={()=>{handleEdit(row.id)}}><EditIcon /></Button>
-                                                                        <Button sx={{p:0, width:'auto', minWidth:0}} onClick={() => { handleDeleteClick(row.id) }}><DeleteForeverIcon /></Button>
+                                                                        <Button sx={{p:0, width:'auto', minWidth:0}} onClick={()=>{handleDeleteClick(row.id)}}><DeleteForeverIcon /></Button>
                                                                     </Stack>
                                                                 </TableCell>
                                                             </TableRow>

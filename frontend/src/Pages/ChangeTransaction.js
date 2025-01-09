@@ -1,5 +1,5 @@
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Container, Stack, Typography, TextField, Button } from "@mui/material";
 import axios from "axios";
@@ -51,7 +51,7 @@ export function AddTransaction() {
         )
         .then(response => {
             if (response.data) {
-                redirect(`../journal/${journal_id}`)
+                redirect(`/journal/${journal_id}`)
             }
         })
         .catch(error => {
@@ -93,7 +93,7 @@ export function AddTransaction() {
                             />
                         </Stack>
                         <Stack direction={"row"} justifyContent={"end"} gap={1}>
-                            <Link to={`../journal/${journal_id}`}>
+                            <Link to={`/journal/${journal_id}`}>
                                 <Button variant="contained">
                                     Cancel
                                 </Button>
@@ -110,11 +110,11 @@ export function AddTransaction() {
 }
 
 export function UpdateTransaction() {
-    const [open, setOpen] = useState(false);
-    const [company, setCompany] = useState("");
+    const redirect = useNavigate();
     const [date, setDate] = useState(null);
-
-    const { journal_id } = useParams()
+    const [description, setDescription]  = useState("");
+    const [journal_id, setJournal_id] = useState("");
+    const { transaction_id } = useParams();
 
     const getCookie = (name) => {
         let cookieValue = null;
@@ -128,9 +128,32 @@ export function UpdateTransaction() {
                 }
             }
         }
-
         return cookieValue;
     }
+
+    function fetchData() {
+        const csrftoken = getCookie('csrftoken');
+        axios.get(`/api/transaction/?transaction_id=${transaction_id}`, 
+            {
+                headers:{
+                    'X-CSRFTOKEN': csrftoken,
+                    "Content-Type": "multipart/form-data",
+                }
+            }
+        )
+        .then(response => {
+            setDate(dayjs(response.data.date));
+            setDescription(response.data.description);
+            setJournal_id(response.data.journal);
+        })
+        .catch(error => {
+            console.error("Error fetching data:", error.response?.data || error.message);
+        })
+    }
+
+    useEffect(()=>{
+        fetchData();
+    }, [])
 
 
     function handleSubmit(e) {
@@ -138,35 +161,34 @@ export function UpdateTransaction() {
         const csrftoken = getCookie('csrftoken');
 
         const formData = new FormData();
-        formData.append('company', company);
-        formData.append('date', date);
+        formData.append('description', description);
+        formData.append('date', dayjs(date).format("YYYY-MM-DDTHH:mm:ssZ"));
+        formData.append('journal', journal_id);
 
-        const response = axios.post(
-            "/api/journal/",
+        axios.patch(
+            `/api/transaction/?transaction_id=${transaction_id}`,
             formData,
             {
                 headers: {
                     "X-CSRFToken": csrftoken,
+                    "Content-Type": "multipart/form-data",
                 },
             }
         )
-            .then(function (response) {
-                if (response.data) {
-                    saveData('login_data', JSON.stringify(response.data), 60);
-                    redirect('/');
-                }
-            })
-            .catch(function (error) {
-                if (error.response && error.response.data) {
-                    const errors = error.response.data;
-                    alert("Form validation failed:\n" + JSON.stringify(errors));
-                } else {
-                    console.error("Error submitting form:", error);
-                    alert("Error submitting form. Please try again later.");
-                }
-            });
-
-        setOpen(false);
+        .then((response) => {
+            if (response.data) {
+                redirect(`/journal/${journal_id}`);
+            }
+        })
+        .catch((error) => {
+            if (error.response && error.response.data) {
+                const errors = error.response.data;
+                alert("Form validation failed:\n" + JSON.stringify(errors));
+            } else {
+                console.error("Error submitting form:", error);
+                alert("Error submitting form. Please try again later.");
+            }
+        });
     }
 
     return (
@@ -179,30 +201,30 @@ export function UpdateTransaction() {
                                 Edit Transaction
                                 <Stack sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                                     <Typography variant="h6" sx={{ backgroundColor: "#0074D9", color: "white", px: 2, borderRadius: "16px" }}>
-                                        # {journal_id}
+                                        {transaction_id}
                                     </Typography>
                                 </Stack>
                             </Stack>
                         </Typography>
                         <Stack>
-                            <TextField label="Company" value={company}
-                                onChange={(e) => setCompany(e.target.value)} required />
+                            <TextField label="Description" value={description}
+                                onChange={(e) => setDescription(e.target.value)} required />
                         </Stack>
                         <Stack>
                             <DateTimePicker
-                                label="Period"
+                                label="Date"
                                 value={date}
                                 onChange={(e) => setDate(e)}
                                 required
                             />
                         </Stack>
                         <Stack direction={"row"} justifyContent={"end"} gap={1}>
-                            <Link to={`../journal/${journal_id}`}>
+                            <Link to={`/journal/${journal_id}`}>
                                 <Button variant="contained">
                                     Cancel
                                 </Button>
                             </Link>
-                            <Button variant="contained">
+                            <Button variant="contained" onClick={handleSubmit}>
                                 Apply Changes
                             </Button>
                         </Stack>

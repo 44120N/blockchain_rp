@@ -35,8 +35,8 @@ class GeneralJournal(models.Model):
 
 class Transaction(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    date = models.DateTimeField(verbose_name="Transaction Date") 
     # Date must be lower than journal.period
+    date = models.DateTimeField(verbose_name="Transaction Date") 
     description = models.TextField(null=True, blank=True)
     journal = models.ForeignKey(
         GeneralJournal, on_delete=models.CASCADE, related_name="transactions"
