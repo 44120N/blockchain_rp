@@ -5,11 +5,10 @@ from rest_framework.parsers import MultiPartParser
 import json
 
 from django.shortcuts import get_object_or_404
-from ..forms import GeneralJournalForm, TransactionForm, TransactionLineForm, AccountForm
 from ..models import GeneralJournal, Transaction, TransactionLine, Account
 from ..serializers import (
     GeneralJournalSerializer, TransactionSerializer, TransactionLineSerializer, AccountSerializer,
-    GeneralJournalFormSerializer, TransactionFormSerializer, TransactionLineFormSerializer
+    GeneralJournalFormSerializer, TransactionFormSerializer, TransactionLineFormSerializer, AccountFormSerializer
 )
 
 # Create your views here.
@@ -42,9 +41,9 @@ class GeneralJournalAPI(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request, format=None):
-        # It needs blockchain_id to create the journal
+        # It needs a Blockchain to create the GeneralJournal
         # blockchain_id = request.GET.get(self.lookup_url_kwarg)
-        # blockchain = get_object_or_404(Blockchain, id =blockchain_id)
+        # blockchain = get_object_or_404(Blockchain, id=blockchain_id)
         serializer = self.get_serializer_class('POST')(data=request.data)
         if serializer.is_valid():
             if GeneralJournal.objects.filter(
@@ -115,17 +114,19 @@ class TransactionAPI(APIView):
             transaction = get_object_or_404(Transaction, journal=journal_id)
             serializer = self.get_serializer_class('GET')(transaction, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        if transaction_id:
+        elif transaction_id:
             transaction = get_object_or_404(Transaction, id=transaction_id)
             serializer = self.get_serializer_class('GET')(transaction)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        transaction = Transaction.objects.all()
-        serializer = self.get_serializer_class('GET')(transaction, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            transaction = Transaction.objects.all()
+            serializer = self.get_serializer_class('GET')(transaction, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request, format=None):
+        # It needs a Block to create the Transaction
+        # block_id = request.GET.get(self.lookup_url_kwarg)
+        # blockc = get_object_or_404(Block, id=blockc_id)
         journal_id = request.GET.get(self.lookup_url_kwarg_journal)
         if journal_id:
             journal = GeneralJournal.objects.filter(id=journal_id)
@@ -139,7 +140,7 @@ class TransactionAPI(APIView):
                     return Response(serializer.data, status=status.HTTP_201_CREATED)
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             return Response({"error": "Transaction not found"}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"error": "Transaction id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "Journal id is required"}, status=status.HTTP_400_BAD_REQUEST)
     
     def put(self, request, format=None):
         transaction_id = request.GET.get(self.lookup_url_kwarg_transaction)
@@ -172,30 +173,51 @@ class TransactionAPI(APIView):
         return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
 class TransactionLineAPI(APIView):
-    lookup_url_kwarg = 'id'
+    lookup_url_kwarg_transaction = 'transaction_id'
+    lookup_url_kwarg_line = 'transaction-line_id'
     
     def get_serializer_class(self, method):
-        if method in ['POST', 'PUT']:
+        if method in ['POST', 'PUT', 'PATCH']:
             return TransactionLineFormSerializer
         return TransactionLineSerializer
     
     def get(self, request, format=None):
-        line_id = request.GET.get(self.lookup_url_kwarg)
+        line_id = request.GET.get(self.lookup_url_kwarg_line)
+        transaction_id = request.GET.get(self.lookup_url_kwarg_transaction)
         if line_id:
             line = get_object_or_404(TransactionLine, id=line_id)
-            data = self.get_serializer_class('GET')(line).data
-            return Response(data, status=status.HTTP_200_OK)
-        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
-
+            serializer = self.get_serializer_class('GET')(line)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        elif transaction_id:
+            lines = get_object_or_404(TransactionLine, transaction=transaction_id)
+            serializer = self.get_serializer_class('GET')(lines, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            lines = TransactionLine.objects.all()
+            serializer = self.get_serializer_class('GET')(lines, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+    
     def post(self, request, format=None):
-        serializer = self.get_serializer_class('POST')(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        transaction_id = request.GET.get(self.lookup_url_kwarg_transaction)
+        if transaction_id:
+            transaction = Transaction.objects.filter(id=transaction_id)
+            if transaction.exists():
+                print(request.data)
+                data = request.data.copy()
+                data['transaction'] = transaction_id
+                
+                serializer = self.get_serializer_class('POST')(data=data)
+                if serializer.is_valid():
+                    # Add the unique account protocol later
+                    print(serializer.validated_data)
+                    serializer.save()
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "transaction does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "transaction parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, format=None):
-        line_id = request.data.get(self.lookup_url_kwarg)
+        line_id = request.data.get(self.lookup_url_kwarg_line)
         if line_id:
             line = get_object_or_404(TransactionLine, id=line_id)
             serializer = self.get_serializer_class('PUT')(line, data=request.data, partial=True)
@@ -206,7 +228,7 @@ class TransactionLineAPI(APIView):
         return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, format=None):
-        line_id = request.GET.get(self.lookup_url_kwarg)
+        line_id = request.GET.get(self.lookup_url_kwarg_line)
         if line_id:
             line = get_object_or_404(TransactionLine, id=line_id)
             line.delete()
@@ -216,27 +238,46 @@ class TransactionLineAPI(APIView):
 class AccountAPI(APIView):
     serializer_class = AccountSerializer
     lookup_url_kwarg = 'id'
+    
+    def get_serializer_class(self, method):
+        if method in ['POST', 'PUT', 'PATCH']:
+            return AccountFormSerializer
+        return AccountSerializer
 
     def get(self, request, format=None):
         account_id = request.GET.get(self.lookup_url_kwarg)
         if account_id:
             account = get_object_or_404(Account, id=account_id)
-            data = self.serializer_class(account).data
-            return Response(data, status=status.HTTP_200_OK)
-        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+            serializer = self.get_serializer_class('GET')(account)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            account = Account.objects.all()
+            serializer = self.get_serializer_class('GET')(account, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, format=None):
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.get_serializer_class('POST')(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, format=None):
-        account_id = request.data.get(self.lookup_url_kwarg)
+        account_id = request.GET.get(self.lookup_url_kwarg)
         if account_id:
             account = get_object_or_404(Account, id=account_id)
-            serializer = self.serializer_class(account, data=request.data, partial=True)
+            serializer = self.get_serializer_class('PUT')(account, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    def patch(self, request, format=None):
+        account_id = request.GET.get(self.lookup_url_kwarg)
+        if account_id:
+            account = get_object_or_404(Account, id=account_id)
+            serializer = self.get_serializer_class('PATCH')(account, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)

@@ -1,18 +1,52 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider/LocalizationProvider";
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DatePicker } from "@mui/x-date-pickers/DatePicker"
 import { Container, Stack, Typography, TextField, Button } from "@mui/material";
-import dayjs from "dayjs";
 import axios from "axios";
+import SelectField from "../Components/SelectField";
+import CustomInputNumber from "../Components/CustomInputNumber";
 
 export function AddTransactionLine() {
+    const addThousandSeparator = (value) => {
+        const parts = value.toString().split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return parts.join('.');
+    };
+
     const redirect = useNavigate();
-    const [company, setCompany] = useState("");
-    const [date, setDate] = useState(null);
+    const [accountChoices, setAccountChoices] = useState([]);
+    const typeChoices = [[true, "Debit"], [false, "Credit"]];
+    const [account, setAccount] = useState("");
+    const [type, setType] = useState(true);
+    const [value, setValue] = useState(addThousandSeparator(0.00));
     const { transaction_id } = useParams();
+
+    function fetchAccount() {
+        const csrftoken = getCookie('csrftoken');
+        axios.get('/api/account', {
+            headers: {
+                "X-CSRFToken": csrftoken,
+                "Content-Type": "multipart/form-data",
+            }
+        })
+        .then(response => {
+            const accounts = response.data.map((v) => ([
+                v.id,
+                v.name,
+            ]));
+            console.log(accounts);
+            setAccountChoices(accounts);
+        })
+        .catch(function (error) {
+            if (error.response && error.response.data) {
+                const errors = error.response.data;
+                alert("Form validation failed:\n" + JSON.stringify(errors));
+            } else {
+                console.error("Error submitting form:", error);
+                alert("Error submitting form. Please try again later.");
+            }
+        });
+    }
 
     const getCookie = (name) => {
         let cookieValue = null;
@@ -34,11 +68,13 @@ export function AddTransactionLine() {
         const csrftoken = getCookie('csrftoken');
 
         const formData = new FormData();
-        formData.append('company', company);
-        formData.append('period', dayjs(date).format("YYYY-MM-DD"));
-
+        formData.append('account', account);
+        formData.append('is_debit', type);
+        formData.append('value', parseFloat(String(value).replaceAll(',', '')).toFixed(2));
+        console.log(type);
+        
         axios.post(
-            "/api/journal/",
+            `/api/transaction-line/?transaction_id=${transaction_id}`,
             formData,
             {
                 headers: {
@@ -47,63 +83,61 @@ export function AddTransactionLine() {
                 },
             }
         )
-            .then(function (response) {
-                if (response.data) {
-                    redirect('/journal');
-                }
-            })
-            .catch(function (error) {
-                if (error.response && error.response.data) {
-                    const errors = error.response.data;
-                    alert("Form validation failed:\n" + JSON.stringify(errors));
-                } else {
-                    console.error("Error submitting form:", error);
-                    alert("Error submitting form. Please try again later.");
-                }
-            });
+        .then(function (response) {
+            if (response.data) {
+                redirect(`/transaction/${transaction_id}`);
+            }
+        })
+        .catch(function (error) {
+            if (error.response && error.response.data) {
+                const errors = error.response.data;
+                alert("Form validation failed:\n" + JSON.stringify(errors));
+            } else {
+                console.error("Error submitting form:", error);
+                alert("Error submitting form. Please try again later.");
+            }
+        });
     }
+
+    useEffect(()=>{
+        fetchAccount();
+    }, []);
 
     return (
         <>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <Container fixed sx={{ my: "3%" }}>
-                    <Stack sx={{ backgroundColor: "aliceblue", p: 5, borderRadius: "32px" }} gap={3}>
-                        <Typography variant="h3">
-                            <Stack direction={"row"} sx={{ justifyContent: "space-between" }}>
-                                Add Transaction Line
-                                <Stack sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                    <Typography variant="h6" sx={{ backgroundColor: "#0074D9", color: "white", px: 2, borderRadius: "16px" }}>
-                                        {transaction_id}
-                                    </Typography>
-                                </Stack>
+            <Container fixed sx={{ my: "3%" }}>
+                <Stack sx={{ backgroundColor: "aliceblue", p: 5, borderRadius: "32px" }} gap={3}>
+                    <Typography variant="h3">
+                        <Stack direction={"row"} sx={{ justifyContent: "space-between" }}>
+                            Add Transaction Line
+                            <Stack sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <Typography variant="h6" sx={{ backgroundColor: "#0074D9", color: "white", px: 2, borderRadius: "16px" }}>
+                                    Transaction ID: {transaction_id}
+                                </Typography>
                             </Stack>
-                        </Typography>
-                        <Stack>
-                            <TextField label="Company" value={company}
-                                onChange={(e) => setCompany(e.target.value)} required />
                         </Stack>
-                        <Stack>
-                            <DatePicker
-                                label="Period"
-                                value={date}
-                                onChange={(e) => setDate(e)}
-                                format="YYYY-MM-DD"
-                                required
-                            />
-                        </Stack>
-                        <Stack direction={"row"} justifyContent={"end"} gap={1}>
-                            <Link to={`../journal`}>
-                                <Button variant="contained">
-                                    Cancel
-                                </Button>
-                            </Link>
-                            <Button variant="contained" onClick={handleSubmit}>
-                                Add
+                    </Typography>
+                    <Stack>
+                        <SelectField var={account} setVar={setAccount} choices={accountChoices} label={"Account"} />
+                    </Stack>
+                    <Stack>
+                        <CustomInputNumber name="donation" label="Amount" prefix={"IDR"} var={value} setVar={setValue} fullWidth color={"primary"} decimal/>
+                    </Stack>
+                    <Stack>
+                        <SelectField var={type} setVar={setType} choices={typeChoices} label={"Type"} />
+                    </Stack>
+                    <Stack direction={"row"} justifyContent={"end"} gap={1}>
+                        <Link to={`/journal`}>
+                            <Button variant="contained">
+                                Cancel
                             </Button>
-                        </Stack>
-                    </Stack >
-                </Container >
-            </LocalizationProvider>
+                        </Link>
+                        <Button variant="contained" onClick={handleSubmit}>
+                            Add
+                        </Button>
+                    </Stack>
+                </Stack >
+            </Container >
         </>
     )
 }

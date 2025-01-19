@@ -9,16 +9,17 @@ ACCOUNT_TYPES = [
     ('equity', 'Equity'),
     ('revenue', 'Revenue'),
     ('expense', 'Expense'),
-    ('undefined', 'Undefined'),
+    ('', 'Undefined')
 ]
 
 class Account(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, max_length=255)
+    ref = models.CharField(max_length=10, default='', unique=True)
     name = models.CharField(max_length=255, unique=True)
-    type = models.CharField(max_length=20, choices=ACCOUNT_TYPES, default="undefined")
+    type = models.CharField(max_length=20, choices=ACCOUNT_TYPES, default="")
     
     def __str__(self):
-        return f"{self.name} ({self.id})"
+        return f"{self.name}({self.id})"
 
 class GeneralJournal(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, max_length=255)

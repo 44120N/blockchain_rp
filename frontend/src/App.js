@@ -8,7 +8,7 @@ import Footer from "./Components/Footer";
 import Login from "./Pages/Login";
 import SignUp from "./Pages/Signup";
 import GeneralJournal from "./Pages/GeneralJournal";
-import GeneralAccount from "./Pages/GeneralAccount";
+import Account from "./Pages/Account";
 import Transaction from "./Pages/Transaction";
 import { AddJournal, UpdateJournal } from "./Pages/ChangeJournal";
 import SpecificJournal from "./Pages/SpecificJournal";
@@ -29,16 +29,16 @@ export default function App() {
                 <Route path="/journal/:journal_id" Component={SpecificJournal} />
                 <Route path="/journal/create" Component={AddJournal} />
                 <Route path="/journal/:journal_id/update" Component={UpdateJournal} />
-                <Route path="/account" Component={GeneralAccount} />
+                <Route path="/account" Component={Account} />
                 <Route path="/account/:account_id" Component={SpecificAccount} />
                 <Route path="/account/create" Component={AddAccount} />
                 <Route path="/account/:account_id/update" Component={UpdateAccount} />
 
-                <Route path="/transaction/:journal_id" Component={Transaction} />
+                <Route path="/transaction/:transaction_id" Component={Transaction} />
                 <Route path="/transaction/:journal_id/create" Component={AddTransaction} />
                 <Route path="/transaction/:transaction_id/update" Component={UpdateTransaction} />
                 <Route path="/transaction-line/:transaction_id/create" Component={AddTransactionLine} />
-                <Route path="/transaction-line/:transaction_id/update" Component={UpdateTransactionLine} />
+                <Route path="/transaction-line/:transaction-line_id/update" Component={UpdateTransactionLine} />
 
             </Routes>
         </Router>

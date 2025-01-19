@@ -83,4 +83,9 @@ class TransactionFormSerializer(serializers.ModelSerializer):
 class TransactionLineFormSerializer(serializers.ModelSerializer):
     class Meta:
         model = TransactionLine
-        fields = ['account', 'is_debit', 'value']
+        fields = ['account', 'is_debit', 'value', 'transaction']
+
+class AccountFormSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+        fields = ['ref', 'name', 'type']

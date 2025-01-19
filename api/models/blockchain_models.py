@@ -115,7 +115,6 @@ class BlockHeader(models.Model):
             exponent += 1
         bits = f"{exponent:02x}{coefficient:06x}"
         return bits
-
     
     def mine(self, target):
         """Mine the block by finding a nonce that produces a hash below the target."""
@@ -239,7 +238,7 @@ class ChainUser(models.Model):
         return f"Keys for Blockchain {self.blockchain.id}"
     
     def generate_keys(self):
-        """Generate a 256-bit private key"""
+        """Generate a 256-bit private key using ECDSA"""
         private_key_bytes = os.urandom(32)
         private_key_hex = private_key_bytes.hex()
         

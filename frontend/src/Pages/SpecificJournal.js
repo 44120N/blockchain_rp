@@ -16,7 +16,8 @@ import {
     Divider,
     Stack,
     Button,
-    TextField
+    TextField,
+    getTableRowUtilityClass
 } from "@mui/material";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import ColorPalette from "../Components/ColorPalette";
@@ -27,34 +28,27 @@ import axios from "axios";
 import dayjs from "dayjs";
 
 export default function SpecificJournal() {
+    const addThousandSeparator = (value) => {
+        const parts = value.toString().split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return parts.join('.');
+    };
+
     const redirect = useNavigate();
-    const [journalId, setJournalId] = useState('');
-    const [popupId, setPopupId] = useState('')
+    const [popupId, setPopupId] = useState('');
     const [company, setCompany] = useState('');
     const [period, setPeriod] = useState('');
     
     const [rows, setRows] = useState([]);
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [popup, setPopup] = useState(false);
     const { journal_id } = useParams();
 
     const columns = [
-        { id: 'date', label: 'Date', minWidth: 100 },
         { id: 'account', label: 'Account', minWidth: 200 },
-        { id: 'ref', label: 'Ref', minWidth: 100 },
-        { id: 'dr', label: 'Debit', minWidth: 100 },
-        { id: 'cr', label: 'Credit', minWidth: 100 },
+        { id: 'ref', label: 'Ref', minWidth: 100, align: 'center' },
+        { id: 'dr', label: 'Debit', minWidth: 100, align: 'center' },
+        { id: 'cr', label: 'Credit', minWidth: 100, align: 'center' },
     ];
-
-    const handleChangePage = (event, newPage) => {
-        setPage(newPage);
-    };
-
-    const handleChangeRowsPerPage = (event) => {
-        setRowsPerPage(+event.target.value);
-        setPage(0);
-    };
 
     const getCookie = (name) => {
         let cookieValue = null;
@@ -80,9 +74,9 @@ export default function SpecificJournal() {
             },
         })
         .then(response => {
-            setJournalId(response.data.id);
             setCompany(response.data.company);
             setPeriod(response.data.period);
+            console.log(JSON.stringify(response.data.transactions));
             setRows(response.data.transactions);
         })
         .catch(error => {
@@ -165,6 +159,9 @@ export default function SpecificJournal() {
                                         <Table stickyHeader aria-label="sticky table">
                                             <TableHead>
                                                 <TableRow>
+                                                    <TableCell align="center">
+                                                        Date
+                                                    </TableCell>
                                                     {columns.map((column) => (
                                                         <TableCell
                                                             key={column.id}
@@ -174,103 +171,257 @@ export default function SpecificJournal() {
                                                             {column.label}
                                                         </TableCell>
                                                     ))}
-                                                    <TableCell align="right">
+                                                    <TableCell align="center">
                                                         Action
                                                     </TableCell>
                                                 </TableRow>
                                             </TableHead>
                                             <TableBody>
-                                                {rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
+                                                {/* {rows.map((row) => {
                                                     return (
-                                                        <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
-                                                            {columns.map((column) => {
-                                                                if (column.id === 'account') {
-                                                                    return (
-                                                                        <TableCell key={`${row.id}-${column.id}`} align={column.align}>
-                                                                            {row.lines.map((line, index) => (
-                                                                                <Typography
-                                                                                    key={`${row.id}-${column.id}-${index}`}
-                                                                                    sx={{
-                                                                                        marginLeft: line.is_debit ? 0 : "1em",
-                                                                                    }}
-                                                                                >
-                                                                                    {line.account.name}
-                                                                                </Typography>
-                                                                            ))}
-                                                                            ({row.description})
-                                                                        </TableCell>
-                                                                    );
-                                                                } else if (column.id === 'dr') {
-                                                                    const totalDebit = row.lines
-                                                                        .filter((line) => line.is_debit)
-                                                                        .reduce((sum, line) => sum + line.value, 0);
-                                                                    return (
-                                                                        totalDebit?
+                                                        <>
+                                                            <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
+                                                                <TableCell align={"center"}>
+                                                                    <Link to={`/transaction/${row.id}`}>
+                                                                        {dayjs(row.date).format("DD/MM/YYYY")}
+                                                                        <br />
+                                                                        {dayjs(row.date).format("HH:mm")}
+                                                                    </Link>
+                                                                </TableCell>
+                                                                {columns.map((column) => {
+                                                                    if (column.id === 'account') {
+                                                                        return (
                                                                             <TableCell key={`${row.id}-${column.id}`} align={column.align}>
-                                                                                {totalDebit.toFixed(2)}
+                                                                                {row.lines.map((line, index) => (
+                                                                                    <Typography
+                                                                                        key={`${row.id}-${column.id}-${index}`}
+                                                                                        sx={{
+                                                                                            marginLeft: line.is_debit ? 0 : "1em",
+                                                                                        }}
+                                                                                    >
+                                                                                        {line.account.name}
+                                                                                    </Typography>
+                                                                                ))}
                                                                             </TableCell>
-                                                                        :
+                                                                        );
+                                                                    } else if (column.id === 'ref') {
+                                                                        return (
+                                                                            <TableCell key={`${row.id}-${column.id}`} align={'center'}>
+                                                                                {row.lines.map((line, index) => (
+                                                                                    <Typography
+                                                                                        key={`${row.id}-${column.id}-${index}`}
+                                                                                    >
+                                                                                        {line.account.ref}
+                                                                                    </Typography>
+                                                                                ))}
+                                                                            </TableCell>
+                                                                        );
+                                                                    } else if (column.id === 'dr') {
+                                                                        return (
+                                                                            <>
+                                                                                {row.lines.map((line, index)=>(
+                                                                                    line.is_debit ?
+                                                                                    <TableCell key={`${row.id}-${column.id}-${index}`} align={column.align}>
+                                                                                        {addThousandSeparator(line.value)}
+                                                                                    </TableCell>
+                                                                                    :
+                                                                                    <TableCell key={`${row.id}-${column.id}-${index}`} align={column.align}>
+                                                                                    </TableCell>
+                                                                                ))}
+                                                                            </>
+                                                                        );
+                                                                    } else if (column.id === 'cr') {
+                                                                        return (
+                                                                            <>
+                                                                                {row.lines.map((line, index)=>(
+                                                                                    !line.is_debit ?
+                                                                                    <TableCell key={`${row.id}-${column.id}-${index}`} align={column.align}>
+                                                                                        {addThousandSeparator(line.value)}
+                                                                                    </TableCell>
+                                                                                    :
+                                                                                    <TableCell key={`${row.id}-${column.id}-${index}`} align={column.align}>
+                                                                                    </TableCell>
+                                                                                ))}
+                                                                            </>
+                                                                        );
+                                                                    } else {
+                                                                        return (
                                                                             <TableCell key={`${row.id}-${column.id}`} align={column.align}>
+                                                                                {column.format && typeof row[column.id] === "number"
+                                                                                    ? column.format(row[column.id])
+                                                                                    : row[column.id]}
                                                                             </TableCell>
-                                                                    );
-                                                                } else if (column.id === 'cr') {
-                                                                    const totalCredit = row.lines
-                                                                        .filter((line) => !line.is_debit)
-                                                                        .reduce((sum, line) => sum + line.value, 0);
-                                                                    return (
-                                                                        totalCredit?
-                                                                            <TableCell key={`${row.id}-${column.id}`} align={column.align}>
-                                                                                {totalCredit.toFixed(2)}
+                                                                        );
+                                                                    }
+                                                                })}
+                                                                <TableCell align="center" key={`api-${row.id}`}>
+                                                                    <Stack direction={'row'} justifyContent={'center'} gap={2}>
+                                                                        <Button onClick={()=>{handleEdit(row.id)}} sx={{p:0, minWidth:0}}>
+                                                                            <EditIcon />
+                                                                        </Button>
+                                                                        <Button onClick={()=>{handleDeleteClick(row.id)}} sx={{p:0, minWidth:0}}>
+                                                                            <DeleteForeverIcon />
+                                                                        </Button>
+                                                                    </Stack>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                            <TableRow>
+                                                                {columns.map((column) => {
+                                                                    if (column.id === 'account') {
+                                                                        return (
+                                                                            <TableCell key={`${row.id}-${column.id}-extra`} align={column.align}>
+                                                                                {row.lines.map((line, index) => (
+                                                                                    <Typography
+                                                                                        key={`${row.id}-${column.id}-${index}-extra`}
+                                                                                        sx={{
+                                                                                            marginLeft: line.is_debit ? 0 : "1em",
+                                                                                        }}
+                                                                                    >
+                                                                                        {row.description}
+                                                                                    </Typography>
+                                                                                ))}
                                                                             </TableCell>
-                                                                        :
-                                                                            <TableCell key={`${row.id}-${column.id}`} align={column.align}>
+                                                                        );
+                                                                    } else if (column.id === 'dr' || column.id === 'cr') {
+                                                                        return (
+                                                                            <TableCell key={`${row.id}-${column.id}-extra`} align={column.align}>
                                                                             </TableCell>
-                                                                    );
-                                                                } else if (column.id === 'date') {
-                                                                    return (
-                                                                        <TableCell key={`${row.id}-${column.id}`} align={column.align}>
-                                                                            <Link to={`/transaction/${row.id}`}>
-                                                                                {dayjs(row[column.id]).format("DD/MM/YYYY")}
-                                                                                <br />
-                                                                                {dayjs(row[column.id]).format("HH:mm")}
-                                                                            </Link>
-                                                                        </TableCell>
-                                                                    );
-                                                                } else {
-                                                                    return (
-                                                                        <TableCell key={`${row.id}-${column.id}`} align={column.align}>
-                                                                            {column.format && typeof row[column.id] === "number"
-                                                                                ? column.format(row[column.id])
-                                                                                : row[column.id]}
-                                                                        </TableCell>
-                                                                    );
-                                                                }
-                                                            })}
-                                                            <TableCell sx={{ minWidth: 100 }} align="right" key={`api-${row.id}`}>
-                                                                <Stack sx={{ display: "block" }}>
-                                                                    <Button onClick={()=>{handleEdit(row.id)}}>
-                                                                        <EditIcon />
-                                                                    </Button>
-                                                                    <Button onClick={()=>{handleDeleteClick(row.id)}}>
-                                                                        <DeleteForeverIcon />
-                                                                    </Button>
-                                                                </Stack>
-                                                            </TableCell>
-                                                        </TableRow>
+                                                                        );
+                                                                    } else {
+                                                                        return (
+                                                                            <TableCell key={`${row.id}-${column.id}-extra`} align={column.align}>
+                                                                                {column.format && typeof row[column.id] === "number"
+                                                                                    ? column.format(row[column.id])
+                                                                                    : row[column.id]}
+                                                                            </TableCell>
+                                                                        );
+                                                                    }
+                                                                })}
+                                                            </TableRow>
+                                                        </>
                                                     );
-                                                })}
+                                                })} */}
+{(() => {
+    // Sort transactions by date
+    const sortedTransactions = rows
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .map((transaction) => {
+            // Sort lines within each transaction by debit/credit and account reference
+            return {
+                ...transaction,
+                lines: transaction.lines.sort((lineA, lineB) => {
+                    if (lineA.is_debit !== lineB.is_debit) {
+                        return lineB.is_debit - lineA.is_debit; // Debit first
+                    }
+                    return lineA.account.ref.localeCompare(lineB.account.ref); // Then by account ref
+                }),
+            };
+        });
+
+        return sortedTransactions.reduce((acc, transaction) => {
+            const transactionLines = transaction.lines;
+        
+            if (transactionLines.length === 0) {
+                // Handle transactions without lines
+                acc.push(
+                    <TableRow hover role="checkbox" tabIndex={-1} key={`empty-${transaction.id}`}>
+                        <TableCell align="center">
+                            <Link to={`/transaction/${transaction.id}`}>
+                                {dayjs(transaction.date).format("DD/MM/YYYY")}
+                                <br />
+                                {dayjs(transaction.date).format("HH:mm")}
+                            </Link>
+                        </TableCell>
+                        <TableCell colSpan={4} align="left">
+                            <Typography
+                                sx={{
+                                    fontWeight: "bold",
+                                }}
+                            >
+                                ({transaction.description})
+                            </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                            <Stack direction="row" justifyContent="center" gap={2}>
+                                <Button onClick={() => handleEdit(transaction.id)} sx={{ p: 0, minWidth: 0 }}>
+                                    <EditIcon />
+                                </Button>
+                                <Button onClick={() => handleDeleteClick(transaction.id)} sx={{ p: 0, minWidth: 0 }}>
+                                    <DeleteForeverIcon />
+                                </Button>
+                            </Stack>
+                        </TableCell>
+                    </TableRow>
+                );
+                return acc;
+            }
+        
+            // Existing logic for transactions with lines
+            transactionLines.forEach((line, index) => {
+                acc.push(
+                    <TableRow hover role="checkbox" tabIndex={-1} key={`${transaction.id}-${line.id}`}>
+                        {index === 0 && (
+                            <TableCell align="center" rowSpan={transactionLines.length + 1}>
+                                <Link to={`/transaction/${line.transaction}`}>
+                                    {dayjs(transaction.date).format("DD/MM/YYYY")}
+                                    <br />
+                                    {dayjs(transaction.date).format("HH:mm")}
+                                </Link>
+                            </TableCell>
+                        )}
+                        <TableCell align="left">
+                            <Typography
+                                sx={{
+                                    marginLeft: line.is_debit ? 0 : "1.5em",
+                                }}
+                            >
+                                {line.account.name}
+                            </Typography>
+                        </TableCell>
+                        <TableCell align="center">{line.account.ref}</TableCell>
+                        <TableCell align="right">
+                            {line.is_debit ? addThousandSeparator(line.value) : ""}
+                        </TableCell>
+                        <TableCell align="right">
+                            {!line.is_debit ? addThousandSeparator(line.value) : ""}
+                        </TableCell>
+                        {index === 0 && (
+                            <TableCell rowSpan={transactionLines.length + 1} align="center">
+                                <Stack direction="row" justifyContent="center" gap={2}>
+                                    <Button onClick={() => handleEdit(transaction.id)} sx={{ p: 0, minWidth: 0 }}>
+                                        <EditIcon />
+                                    </Button>
+                                    <Button onClick={() => handleDeleteClick(transaction.id)} sx={{ p: 0, minWidth: 0 }}>
+                                        <DeleteForeverIcon />
+                                    </Button>
+                                </Stack>
+                            </TableCell>
+                        )}
+                    </TableRow>
+                );
+            });
+        
+            acc.push(
+                <TableRow hover role="checkbox" tabIndex={-1} key={`desc-${transaction.id}`}>
+                    <TableCell colSpan={4} align="left">
+                        <Typography
+                            sx={{
+                                fontWeight: "bold",
+                            }}
+                        >
+                            ({transaction.description})
+                        </Typography>
+                    </TableCell>
+                    <TableCell colSpan={2}></TableCell>
+                </TableRow>
+            );
+        
+            return acc;
+        }, []);        
+})()}
                                             </TableBody>
                                         </Table>
                                     </TableContainer>
-                                    <TablePagination
-                                        rowsPerPageOptions={[10, 25, 100]}
-                                        component="div"
-                                        count={rows.length}
-                                        rowsPerPage={rowsPerPage}
-                                        page={page}
-                                        onPageChange={handleChangePage}
-                                        onRowsPerPageChange={handleChangeRowsPerPage}
-                                    />
                                 </Paper>
                             ):(
                                 <Typography>There is no Transaction in this journal</Typography>

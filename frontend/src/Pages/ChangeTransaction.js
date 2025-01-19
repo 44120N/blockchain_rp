@@ -30,7 +30,6 @@ export function AddTransaction() {
         return cookieValue;
     }
 
-
     function handleSubmit(e) {
         e.preventDefault();
         const csrftoken = getCookie('csrftoken');
@@ -39,7 +38,7 @@ export function AddTransaction() {
         formData.append('description', description);
         formData.append('date', dayjs(date).format("YYYY-MM-DDTHH:mm:ssZ"));
 
-        const response = axios.post(
+        axios.post(
             `/api/transaction/?journal_id=${journal_id}`,
             formData,
             {
@@ -75,7 +74,7 @@ export function AddTransaction() {
                                 Create Transaction
                                 <Stack sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                                     <Typography variant="h6" sx={{ backgroundColor: "#0074D9", color: "white", px: 2, borderRadius: "16px" }}>
-                                        # {journal_id}
+                                        {journal_id}
                                     </Typography>
                                 </Stack>
                             </Stack>

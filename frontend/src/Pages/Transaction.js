@@ -19,39 +19,36 @@ import {
     TextField
 } from "@mui/material";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import ColorPalette from "../Components/ColorPalette";
 import Popup from "../Components/Popup";
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import EditIcon from '@mui/icons-material/Edit';
-
-import { useParams } from "react-router-dom";
+import axios from "axios";
+import dayjs from "dayjs";
 
 export default function Transaction() {
-    const [rows, setRows] = useState([]);
-    const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [popup, setPopup] = useState(false);
+    const addThousandSeparator = (value) => {
+        const parts = value.toString().split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return parts.join('.');
+    };
 
-    const { journal_id } = useParams();
-    const [transaction_id, setTransaction_id] = useState("");
+    const redirect = useNavigate();
+    const [journal, setJournal] = useState('')
+    const [date, setDate] = useState('');
+    const [desc, setDesc] = useState('');
+    const [rows, setRows] = useState([]);
+    const [popupId, setPopupId] = useState('');
+    const [popup, setPopup] = useState(false);
+    const { transaction_id } = useParams();
 
     const columns = [
-        { id: 'date', label: 'Date', minWidth: 100 },
         { id: 'account', label: 'Account', minWidth: 200 },
-        { id: 'ref', label: 'Ref', minWidth: 100 },
-        { id: 'dr', label: 'Debit', minWidth: 100 },
-        { id: 'cr', label: 'Credit', minWidth: 100 },
+        { id: 'ref', label: 'Ref', minWidth: 100, align: 'center' },
+        { id: 'dr', label: 'Debit', minWidth: 100, align: 'center' },
+        { id: 'cr', label: 'Credit', minWidth: 100, align: 'center' },
     ];
-
-    const handleChangePage = (event, newPage) => {
-        setPage(newPage);
-    };
-
-    const handleChangeRowsPerPage = (event) => {
-        setRowsPerPage(+event.target.value);
-        setPage(0);
-    };
 
     const getCookie = (name) => {
         let cookieValue = null;
@@ -70,35 +67,54 @@ export default function Transaction() {
 
     function fetchTransactionData() {
         const csrftoken = getCookie('csrftoken');
-        axios.get(`/api/transaction/?journal_id=${journal_id}`, {
+        axios.get(`/api/transaction/?transaction_id=${transaction_id}`, {
             headers: {
                 'X-CSRFTOKEN': csrftoken,
                 "Content-Type": "multipart/form-data",
             },
         })
-            .then(response => {
-                setTransaction_id(response.data.id)
-            })
-            .catch(error => {
-                console.error("Error fetching data:", error.response?.data || error.message);
-            })
+        .then(response => {
+            console.log(response.data.lines);
+            setJournal(response.data.journal);
+            setDesc(response.data.description);
+            setRows(response.data.lines);
+            setDate(response.data.date);
+        })
+        .catch(error => {
+            console.error("Error fetching data:", error.response?.data || error.message);
+        })
     }
-
-    // useEffect(() => {
-    //     fetchJournalData();
-    //     fetchTransactionData();
-    // }, [])
-
-    function handleDelete(e) {
-        e.preventDefault();
-    }
-
-    function handleEdit() { }
 
     useEffect(() => {
-        setRows({ date: "12-12-2022", account: "India", ref: "101", dr: "10", cr: "100000" })
-        console.log(rows)
+        fetchTransactionData();
     }, [])
+    
+    function handleDelete(line_id) {
+        const csrftoken = getCookie('csrftoken');
+        axios.delete(
+            `/api/transaction-line/?transaction-line_id=${line_id}`, {
+            headers:{
+                'X-CSRFTOKEN': csrftoken,
+                "Content-Type": "multipart/form-data",
+            },
+        })
+        .then(response => {
+            return response.data
+        })
+        .then(()=>{
+            window.location.reload(false);
+        })
+        .catch(error => {
+            console.error("Error deleting data:", error.response?.data || error.message);
+        })
+    }
+
+    const handleDeleteClick = (id) => {
+        setPopupId(id);
+        setPopup(true);
+    }
+    
+    function handleEdit() {}
 
     return (
         <>
@@ -106,10 +122,14 @@ export default function Transaction() {
                 <Container fixed sx={{ marginY: "3%" }}>
                     <Stack gap={5}>
                         <Stack alignItems={'center'} direction={'column'}>
-                            {/* TODO: Capitaize */}
-                            <Typography variant="h3"></Typography>
-                            <Typography variant="h3">Transaction</Typography>
-                            <Typography variant="h3"></Typography>
+                            <Stack direction={'row'} justifyContent={'space-between'} width={'100%'}>
+                                <Typography variant="h3">Transaction</Typography>
+                                <Stack sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    <Typography variant="h6" color="#fff" sx={{ backgroundColor: "#0074D9", px: 2, borderRadius: "16px" }}>
+                                        {transaction_id}
+                                    </Typography>
+                                </Stack>
+                            </Stack>
                             <Divider
                                 sx={{
                                     borderWidth: ".3vh",
@@ -124,9 +144,13 @@ export default function Transaction() {
                                         Add Transaction Line
                                     </Button>
                                 </Link>
-                                <Popup trigger={popup} setTrigger={setPopup} title="A">
+                                <Popup trigger={popup} setTrigger={setPopup} title="Are you sure you want to delete this journal?">
                                     <Stack>
-                                        <Typography>Hey</Typography>
+                                        <Typography>Do you want to delete this journal?</Typography>
+                                        <Typography>This action cannot be undone.</Typography>
+                                    </Stack>
+                                    <Stack>
+                                        <Button variant={"outlined"} sx={{ display: "block", alignSelf: "end" }} onClick={()=>{handleDelete(popupId)}}>Delete</Button>
                                     </Stack>
                                 </Popup>
                             </Stack>
@@ -138,6 +162,9 @@ export default function Transaction() {
                                         <Table stickyHeader aria-label="sticky table">
                                             <TableHead>
                                                 <TableRow>
+                                                    <TableCell align="center">
+                                                        Date
+                                                    </TableCell>
                                                     {columns.map((column) => (
                                                         <TableCell
                                                             key={column.id}
@@ -147,62 +174,139 @@ export default function Transaction() {
                                                             {column.label}
                                                         </TableCell>
                                                     ))}
-                                                    <TableCell align="right">
+                                                    <TableCell align="center">
                                                         Action
                                                     </TableCell>
                                                 </TableRow>
                                             </TableHead>
                                             <TableBody>
-                                                {rows
-                                                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                                    .map((row) => {
-                                                        return (
-                                                            <TableRow hover role="checkbox" tabIndex={-1} key={row.code}>
+                                                {(() => {
+                                                    let lastTransactionId = null;
+                                                    return rows
+                                                    .sort((a, b) => {
+                                                        if (a.is_debit !== b.is_debit) {
+                                                            return b.is_debit - a.is_debit;
+                                                        }
+                                                        return a.account.ref.localeCompare(b.account.ref);
+                                                    })
+                                                    .reduce((acc, row, index, array) => {
+                                                        const showDate = lastTransactionId !== row.transaction;
+                                                        lastTransactionId = row.transaction;
+                                                        acc.push(
+                                                            <TableRow hover role="checkbox" tabIndex={-1} key={row.id}>
+                                                                {showDate ? (
+                                                                    <TableCell 
+                                                                        rowSpan={array.filter((r) => r.transaction === row.transaction).length + 1} 
+                                                                        align="center"
+                                                                    >
+                                                                        {dayjs(date).format("DD/MM/YYYY")}
+                                                                        <br />
+                                                                        {dayjs(date).format("HH:mm")}
+                                                                    </TableCell>
+                                                                ) : null}
                                                                 {columns.map((column) => {
-                                                                    const value = row[column.id];
-                                                                    return (
-                                                                        <TableCell key={column.id} align={column.align}>
-                                                                            {(value == row.id) ?
-                                                                                <Link to={`../transaction/${row.id}`}>
-                                                                                    {column.format && typeof value === 'number'
-                                                                                        ? column.format(value)
-                                                                                        : value}
-                                                                                </Link>
-                                                                                :
-                                                                                <>
-                                                                                    {column.format && typeof value === 'number'
-                                                                                        ? column.format(value)
-                                                                                        : value}
-                                                                                </>
-                                                                            }
-                                                                        </TableCell>
-                                                                    );
+                                                                    if (column.id === 'account') {
+                                                                        return (
+                                                                            <TableCell key={`${row.id}-${column.id}`} align={column.align}>
+                                                                                <Typography
+                                                                                    sx={{
+                                                                                        marginLeft: row.is_debit ? 0 : "1.5em",
+                                                                                    }}
+                                                                                >
+                                                                                    {row.account.name}
+                                                                                </Typography>
+                                                                            </TableCell>
+                                                                        );
+                                                                    } else if (column.id === 'ref') {
+                                                                        return (
+                                                                            <TableCell key={`${row.id}-${column.id}`} align={'center'}>
+                                                                                {row.account.ref}
+                                                                            </TableCell>
+                                                                        );
+                                                                    } else if (column.id === 'dr') {
+                                                                        return (
+                                                                            <TableCell align={column.align} key={`${row.id}-${column.id}`}>
+                                                                                {row.is_debit ? addThousandSeparator(row.value) : ""}
+                                                                            </TableCell>
+                                                                        );
+                                                                    } else if (column.id === 'cr') {
+                                                                        return (
+                                                                            <TableCell align={column.align} key={`${row.id}-${column.id}`}>
+                                                                                {!row.is_debit ? addThousandSeparator(row.value) : ""}
+                                                                            </TableCell>
+                                                                        );
+                                                                    } else {
+                                                                        return (
+                                                                            <TableCell key={`${row.id}-${column.id}`} align={column.align}>
+                                                                                {column.format && typeof row[column.id] === "number"
+                                                                                    ? column.format(row[column.id])
+                                                                                    : row[column.id]}
+                                                                            </TableCell>
+                                                                        );
+                                                                    }
                                                                 })}
-                                                                <TableCell sx={{ minWidth: 100 }} align="right">
-                                                                    <Stack sx={{ display: "block" }}>
-                                                                        <Button onClick={handleEdit}><EditIcon /></Button>
-                                                                        <Button onClick={() => { setPopup(true) }}><DeleteForeverIcon /></Button>
+                                                                <TableCell align="center" key={`api-${row.id}`}>
+                                                                    <Stack direction={'row'} justifyContent={'center'} gap={2}>
+                                                                        <Button onClick={() => { handleEdit(row.id); }} sx={{ p: 0, minWidth: 0 }}>
+                                                                            <EditIcon />
+                                                                        </Button>
+                                                                        <Button onClick={() => { handleDeleteClick(row.id); }} sx={{ p: 0, minWidth: 0 }}>
+                                                                            <DeleteForeverIcon />
+                                                                        </Button>
                                                                     </Stack>
                                                                 </TableCell>
                                                             </TableRow>
                                                         );
-                                                    })}
+
+                                                        const nextRow = array[index + 1];
+                                                        if (!nextRow || nextRow.transaction !== row.transaction) {
+                                                            acc.push(
+                                                                <TableRow hover role="checkbox" tabIndex={-1} key={`desc-${row.transaction}`}>
+                                                                    {columns.map((column) => {
+                                                                        if (column.id === 'account') {
+                                                                            return (
+                                                                                <TableCell key={`${row.transaction}-${column.id}`} align={column.align} colSpan={4}>
+                                                                                    <Typography
+                                                                                        sx={{
+                                                                                            fontWeight: "bold",
+                                                                                        }}
+                                                                                    >
+                                                                                        ({desc})
+                                                                                    </Typography>
+                                                                                </TableCell>
+                                                                            );
+                                                                        }
+                                                                    })}
+                                                                    <TableCell align="center" key={`api-${row.transaction}`}>
+                                                                        <Stack direction={'row'} justifyContent={'center'} gap={2}>
+                                                                            <Button onClick={() => { handleEdit(row.transaction); }} sx={{ p: 0, minWidth: 0 }}>
+                                                                                <EditIcon />
+                                                                            </Button>
+                                                                            <Button onClick={() => { handleDeleteClick(row.transaction); }} sx={{ p: 0, minWidth: 0 }}>
+                                                                                <DeleteForeverIcon />
+                                                                            </Button>
+                                                                        </Stack>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            );
+                                                        }
+                                                        return acc;
+                                                    }, []);
+                                                })()}
                                             </TableBody>
                                         </Table>
                                     </TableContainer>
-                                    <TablePagination
-                                        rowsPerPageOptions={[10, 25, 100]}
-                                        component="div"
-                                        count={rows.length}
-                                        rowsPerPage={rowsPerPage}
-                                        page={page}
-                                        onPageChange={handleChangePage}
-                                        onRowsPerPageChange={handleChangeRowsPerPage}
-                                    />
                                 </Paper>
                             ) : (
                                 <Typography>There is no Transaction in this journal</Typography>
                             )}
+                        </Stack>
+                        <Stack>
+                            <Link to={`/journal/${journal}`}>
+                                <Button>
+                                    Back to Journal
+                                </Button>
+                            </Link>
                         </Stack>
                     </Stack>
                 </Container>
