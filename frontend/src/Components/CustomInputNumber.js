@@ -30,7 +30,7 @@ export default function CustomInputNumber(props) {
             className="input"
             name={props.name}
             label={props.label}
-            variant="standard"
+            variant="outlined"
             value={props.var} 
             onChange={handleChange} 
             multiline={props.multiline}
@@ -51,7 +51,7 @@ export default function CustomInputNumber(props) {
             className="input"
             name={props.name}
             label={props.label}
-            variant="standard"
+            variant="outlined"
             value={props.var} 
             onChange={handleChange} 
             multiline={props.multiline}

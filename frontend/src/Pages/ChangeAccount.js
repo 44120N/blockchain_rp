@@ -76,7 +76,8 @@ export function AddAccount() {
                             </Stack>
                         </Typography>
                         <Stack>
-                            <CustomInputNumber name="Refference" label="Refference" var={ref} setVar={setAccount} required />
+                            <TextField label="Refference" value={ref}
+                                onChange={(e) => setRef(e.target.value)} required />
                         </Stack>
                         <Stack>
                             <TextField label="Account Name" value={account}
@@ -204,7 +205,8 @@ export function UpdateAccount() {
                             </Stack>
                         </Typography>
                         <Stack>
-                            <CustomInputNumber name="Refference" label="Refference" var={ref} setVar={setAccount} required />
+                            <TextField label="Refference" value={ref}
+                                onChange={(e) => setRef(e.target.value)} required />
                         </Stack>
                         <Stack>
                             <TextField label="Account Name" value={account}
