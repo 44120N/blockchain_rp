@@ -8,9 +8,14 @@ def sha256(data: str | bytes) -> bytes:
     elif isinstance(data, bytes):
         return hashlib.sha256(data).digest()
 
-def int_to_little_endian(value: int) -> bytes:
+def int_to_little_endian(value: int | str) -> bytes:
     """Convert an integer to little-endian format."""
-    return struct.pack('<I', value)
+    if isinstance(value, str):
+        value = int(value, 16)
+        return struct.pack('<I', value)
+    if isinstance(value, int):
+        return struct.pack('<I', value)
+    raise TypeError(f"Expected a string or bytes, got {type(value).__name__}.")
 
 def datetime_to_little_endian(dt: datetime=None) -> bytes:
     """Convert a datetime object to 4-byte little-endian format."""
@@ -30,7 +35,9 @@ def little_endian_to_datetime(value: bytes) -> datetime:
 
 def str_to_natural_byte_order(value: str) -> bytes:
     """Convert a string hash in hex format to natural (binary) byte order."""
-    return bytes.fromhex(value)
+    if isinstance(value, str):
+        return bytes.fromhex(value)
+    raise TypeError(f"Expected a string or bytes, got {type(value).__name__}.")
 
 def natural_byte_order_to_str(value: bytes) -> str:
     """Convert a 32-byte hash back to its hexadecimal string representation."""

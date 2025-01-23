@@ -1,11 +1,14 @@
+from django.db import transaction
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 from django.shortcuts import render, get_object_or_404, redirect
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.db import transaction
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
+
 
 from ..models import BlockHeader, Block, Blockchain, ChainUser, GeneralJournal, Transaction, TransactionLine, Account
 from ..serializers import *
@@ -23,6 +26,8 @@ def mine_block(blockchain: Blockchain, journal: GeneralJournal) -> Block:
     Returns:
         Block: The mined block.
     """
+    if not journal.transactions:
+        raise ValueError("The GeneralJournal must contain at least one transaction.")
     
     full_target = int(blockchain.target, 16).to_bytes(32, byteorder="big")
     block_header = BlockHeader()
@@ -43,6 +48,15 @@ def mine_block(blockchain: Blockchain, journal: GeneralJournal) -> Block:
     new_block.save()
     return new_block
 
+# @receiver(post_save, sender=Transaction)
+# @receiver(post_delete, sender=Transaction)
+# @receiver(post_save, sender=GeneralJournal)
+# @receiver(post_delete, sender=GeneralJournal)
+# def auto_mine_block(sender, instance, **kwargs):
+#     blockchain = instance.journal.blockchain if hasattr(instance, 'journal') else instance.blockchain
+#     if blockchain and instance.transactions.exists():
+#         mine_block(blockchain, instance)
+
 class MineAPI(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -51,29 +65,33 @@ class MineAPI(APIView):
         blockchain = chain_user.blockchain
         if not blockchain:
             return Response({"error": "No blockchain associated with this user."}, status=400)
-        
-        try:
-            body = json.loads(request.body)
-            journal_id = body.get("journal_id")
-            if not journal_id:
-                raise ValidationError("journal_id is required.")
-        except json.JSONDecodeError:
-            raise ValidationError("Invalid JSON format.")
-        
+
+        journal_id = request.data.get("journal_id")
+        if not journal_id:
+            return Response({"error": "The journal_id is required."}, status=400)
+
         journal = get_object_or_404(GeneralJournal, id=journal_id)
+        if not journal.transactions.exists():
+            return Response(
+                {"error": "Cannot mine a block with an empty General Journal."},
+                status=400
+            )
+
         try:
             new_block = mine_block(blockchain, journal)
         except ValueError as e:
             return Response({"error": str(e)}, status=400)
-        
+
         return Response({
-            "message": "Block mined successfully",
-            "block_height": new_block.height,
-            "block_hash": new_block.header.block_hash,
-            "block_nonce": new_block.header.nonce,
-            "merkle_root": new_block.header.merkle_root,
-            "block_data": json.loads(new_block.data)
-        })
+            "message": "Block mined successfully.",
+            "block": {
+                "height": new_block.height,
+                "hash": new_block.header.block_hash,
+                "nonce": new_block.header.nonce,
+                "merkle_root": new_block.header.merkle_root,
+                "data": json.loads(new_block.data)
+            }
+        }, status=201)
 
 class ValidateChainAPI(APIView):
     permission_classes = [IsAuthenticated]

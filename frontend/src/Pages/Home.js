@@ -33,6 +33,12 @@ export default function Home() {
             setBlockchain(loginData.blockchain)
         }
     }, []);
+
+    function handleLogout() {
+        localStorage.removeItem('login_data');
+        window.location.reload();
+    }
+
     return (
         <ColorPalette>
             <Container fixed sx={{ marginY: "3%" }}>
@@ -96,6 +102,9 @@ export default function Home() {
                                 <Stack>
                                     <Typography sx={{ mx: 4 }}>{privateKey}</Typography>
                                 </Stack>
+                            </Stack>
+                            <Stack>
+                                <Button onClick={handleLogout}>Logout</Button>
                             </Stack>
                         </Stack>
                     ) : (

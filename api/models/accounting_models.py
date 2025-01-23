@@ -26,6 +26,7 @@ class GeneralJournal(models.Model):
     company = models.CharField(max_length=255)
     period = models.DateField(verbose_name="Journal Period")
     balance = models.DecimalField(decimal_places=2, max_digits=100)
+    is_deleted = models.BooleanField(default=False)
     
     def __str__(self):
         return self.id

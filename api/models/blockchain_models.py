@@ -67,7 +67,6 @@ class BlockHeader(models.Model):
             self.bits = natural_byte_order_to_str(int_to_little_endian(self.bits))
         if isinstance(self.nonce, int):
             self.nonce = natural_byte_order_to_str(int_to_little_endian(self.nonce))
-        
         if isinstance(self.previous_hash, str):
             self.previous_hash = natural_byte_order_to_str(str_to_natural_byte_order(self.previous_hash))
         if isinstance(self.merkle_root, str):
@@ -118,19 +117,19 @@ class BlockHeader(models.Model):
     
     def mine(self, target):
         """Mine the block by finding a nonce that produces a hash below the target."""
-        target_bytes = int.from_bytes(target, byteorder="big")
+        target_bytes = int.from_bytes(target, byteorder="little")
         while True:
             self.block_hash = self.compute_block_hash()
             if int(self.block_hash, 16) < target_bytes:
                 break
-            self.nonce += 1
+            self.nonce = int(self.nonce, 16) + 1 if isinstance(self.nonce, str) else self.nonce + 1
             if self.nonce > 0xFFFFFFFF:
                 raise ValueError("Nonce overflow: No valid hash found.")
         self.save()
 
 class Blockchain(models.Model):
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
-    target = models.TextField(default="0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+    target = models.TextField(default="00000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
@@ -190,22 +189,22 @@ class Block(models.Model):
     def set_general_journal(self, journal: GeneralJournal):
         """Serialize GeneralJournal's transactions and compute Merkle Root."""
         transactions = journal.transactions.all()
-        if not transactions.exists():
+        if not transactions and not journal.is_deleted:
             raise ValueError("GeneralJournal must have at least one transaction.")
         
         txids = [tx.txid for tx in transactions]
         self.header.merkle_root = compute_merkle_root(txids)
         
-        transaction_data = [
-            {
-                "txid": tx.txid,
-                "date": tx.date.isoformat(),
-                "description": tx.description,
-                "value": tx.total,
-            }
-            for tx in transactions
-        ]
-        self.data = json.dumps({"transactions": transaction_data}, cls=DjangoJSONEncoder)
+        transaction_data = {
+            "action": "delete" if journal.is_deleted else "modify",
+            "journal_id": str(journal.id),
+            "company": journal.company,
+            "period": journal.period.isoformat(),
+            "balance": str(journal.balance),
+            "transactions": txids,
+        }
+        
+        self.data = json.dumps(transaction_data, indent=4)
         self.size = len(self.data)
         self.save()
     
@@ -258,3 +257,19 @@ class ChainUser(models.Model):
         self.save()
 
         return self.private_key, self.public_key
+
+    def sign_transaction(private_key_hex: str, transaction_data: str) -> str:
+        """
+        Signs the transaction data using the private key.
+
+        Args:
+            private_key_hex (str): The user's private key in hexadecimal.
+            transaction_data (str): The data to sign (typically a serialized transaction).
+
+        Returns:
+            str: The signature in hexadecimal.
+        """
+        sk = SigningKey.from_string(bytes.fromhex(private_key_hex), curve=SECP256k1)
+        hashed_data = sha256(transaction_data)
+        signature = sk.sign(hashed_data)
+        return signature.hex()

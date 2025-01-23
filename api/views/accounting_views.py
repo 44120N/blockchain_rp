@@ -10,6 +10,7 @@ from ..serializers import (
     GeneralJournalSerializer, TransactionSerializer, TransactionLineSerializer, AccountSerializer,
     GeneralJournalFormSerializer, TransactionFormSerializer, TransactionLineFormSerializer, AccountFormSerializer
 )
+from .blockchain_views import mine_block
 
 # Create your views here.
 
@@ -25,33 +26,29 @@ class GeneralJournalAPI(APIView):
     def get(self, request, format=None):
         journal_id = request.GET.get(self.lookup_url_kwarg)
         if journal_id:
-            journal = get_object_or_404(GeneralJournal, id=journal_id)
+            journal = get_object_or_404(GeneralJournal, id=journal_id, is_deleted=False)
             serializer = self.get_serializer_class('GET')(journal)
-            
-            # data = {
-            #     'company': serializer.data['company'],
-            #     'period': serializer.data['period'],
-            #     'transactions': serializer.data['transactions'],
-            # }
-            # print(data)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            journals = GeneralJournal.objects.all()
+            journals = GeneralJournal.objects.filter(is_deleted=False).all()
             serializer = self.get_serializer_class('GET')(journals, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request, format=None):
-        # It needs a Blockchain to create the GeneralJournal
-        # blockchain_id = request.GET.get(self.lookup_url_kwarg)
-        # blockchain = get_object_or_404(Blockchain, id=blockchain_id)
         serializer = self.get_serializer_class('POST')(data=request.data)
         if serializer.is_valid():
             if GeneralJournal.objects.filter(
                 company=serializer.validated_data.get('company'),
                 period=serializer.validated_data.get('period'),
+                is_deleted=False
             ).exists():
                 return Response({"status": "General Journal with the same credentials has been created"}, status=status.HTTP_400_BAD_REQUEST)
-            serializer.save()
+            journal = serializer.save()
+            
+            blockchain = request.user.chain_user.blockchain
+            if not blockchain:
+                return Response({"error": "No blockchain associated with this user. Please create a blockchain first."}, status=400)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -64,10 +61,19 @@ class GeneralJournalAPI(APIView):
                 if GeneralJournal.objects.filter(
                     company=serializer.validated_data.get('company'),
                     period=serializer.validated_data.get('period'),
-                    balance=serializer.validated_data.get('balance'),
+                    is_deleted=False
                 ).exclude(id=journal_id).exists():
                     return Response({"status": "General Journal with the same credentials has been created"}, status=status.HTTP_400_BAD_REQUEST)
-                serializer.save()
+                
+                journal = serializer.save()
+                blockchain = request.user.chain_user.blockchain
+                if not blockchain:
+                    return Response({"error": "No blockchain associated with this user. Please create a blockchain first."}, status=400)
+                try:
+                    mine_block(blockchain, journal)
+                except ValueError as e:
+                    return Response({"error": f"Failed to mine block: {str(e)}"}, status=400)
+                
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -81,9 +87,19 @@ class GeneralJournalAPI(APIView):
                 if GeneralJournal.objects.filter(
                     company=serializer.validated_data.get('company'),
                     period=serializer.validated_data.get('period'),
+                    is_deleted=False
                 ).exclude(id=journal_id).exists():
                     return Response({"status": "General Journal with the same credentials has been created"}, status=status.HTTP_400_BAD_REQUEST)
-                serializer.save()
+                
+                journal = serializer.save()
+                blockchain = request.user.chain_user.blockchain
+                if not blockchain:
+                    return Response({"error": "No blockchain associated with this user. Please create a blockchain first."}, status=400)
+                try:
+                    mine_block(blockchain, journal)
+                except ValueError as e:
+                    return Response({"error": f"Failed to mine block: {str(e)}"}, status=400)
+                
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -92,7 +108,16 @@ class GeneralJournalAPI(APIView):
         journal_id = request.GET.get(self.lookup_url_kwarg)
         if journal_id:
             journal = get_object_or_404(GeneralJournal, id=journal_id)
-            journal.delete()
+            journal.is_deleted = True
+            journal.save()
+
+            blockchain = request.user.chain_user.blockchain
+            if not blockchain:
+                return Response({"error": "No blockchain associated with this user. Please create a blockchain first."}, status=400)
+            try:
+                mine_block(blockchain, journal)
+            except ValueError as e:
+                return Response({"error": f"Failed to mine block: {str(e)}"}, status=400)
             return Response({"message": "General Journal deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
         return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -124,19 +149,26 @@ class TransactionAPI(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request, format=None):
-        # It needs a Block to create the Transaction
-        # block_id = request.GET.get(self.lookup_url_kwarg)
-        # blockc = get_object_or_404(Block, id=blockc_id)
         journal_id = request.GET.get(self.lookup_url_kwarg_journal)
         if journal_id:
-            journal = GeneralJournal.objects.filter(id=journal_id)
-            if journal.exists():
+            journal = get_object_or_404(GeneralJournal, id=journal_id)
+            if journal:
                 data = request.data.copy()
                 data['journal'] = journal_id
                 
                 serializer = self.get_serializer_class('POST')(data=data)
                 if serializer.is_valid():
-                    serializer.save()
+                    transaction = serializer.save()
+                    
+                    blockchain = request.user.chain_user.blockchain
+                    if not blockchain:
+                        return Response({"error": "No blockchain associated with this General Journal."}, status=400)
+                    
+                    try:
+                        mine_block(blockchain, journal)
+                    except ValueError as e:
+                        return Response({"error": f"Failed to mine block: {str(e)}"}, status=400)
+                    
                     return Response(serializer.data, status=status.HTTP_201_CREATED)
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             return Response({"error": "Transaction not found"}, status=status.HTTP_400_BAD_REQUEST)
@@ -146,9 +178,20 @@ class TransactionAPI(APIView):
         transaction_id = request.GET.get(self.lookup_url_kwarg_transaction)
         if transaction_id:
             transaction = get_object_or_404(Transaction, id=transaction_id)
+            journal = transaction.journal
             serializer = self.get_serializer_class('PUT')(transaction, data=request.data)
             if serializer.is_valid():
-                serializer.save()
+                transaction = serializer.save()
+                
+                blockchain = request.user.chain_user.blockchain
+                if not blockchain:
+                    return Response({"error": "No blockchain associated with this General Journal."}, status=400)
+                
+                try:
+                    mine_block(blockchain, journal)
+                except ValueError as e:
+                    return Response({"error": f"Failed to mine block: {str(e)}"}, status=400)
+                    
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -157,9 +200,21 @@ class TransactionAPI(APIView):
         transaction_id = request.GET.get(self.lookup_url_kwarg_transaction)
         if transaction_id:
             transaction = get_object_or_404(Transaction, id=transaction_id)
+            journal = transaction.journal
+
             serializer = self.get_serializer_class('PATCH')(transaction, data=request.data, partial=True)
             if serializer.is_valid():
-                serializer.save()
+                transaction = serializer.save()
+                
+                blockchain = request.user.chain_user.blockchain
+                if not blockchain:
+                        return Response({"error": "No blockchain associated with this General Journal."}, status=400)
+                
+                try:
+                    mine_block(blockchain, journal)
+                except ValueError as e:
+                    return Response({"error": f"Failed to mine block: {str(e)}"}, status=400)
+                
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -168,7 +223,18 @@ class TransactionAPI(APIView):
         transaction_id = request.GET.get(self.lookup_url_kwarg_transaction)
         if transaction_id:
             transaction = get_object_or_404(Transaction, id=transaction_id)
+            journal = transaction.journal
             transaction.delete()
+            
+            blockchain = request.user.chain_user.blockchain
+            if not blockchain:
+                return Response({"error": "No blockchain associated with this General Journal."}, status=400)
+            
+            try:
+                mine_block(blockchain, journal)
+            except ValueError as e:
+                return Response({"error": f"Failed to mine block: {str(e)}"}, status=400)
+            
             return Response({"message": "Transaction deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
         return Response({"error": "id parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -202,14 +268,11 @@ class TransactionLineAPI(APIView):
         if transaction_id:
             transaction = Transaction.objects.filter(id=transaction_id)
             if transaction.exists():
-                print(request.data)
                 data = request.data.copy()
                 data['transaction'] = transaction_id
                 
                 serializer = self.get_serializer_class('POST')(data=data)
                 if serializer.is_valid():
-                    # Add the unique account protocol later
-                    print(serializer.validated_data)
                     serializer.save()
                     return Response(serializer.data, status=status.HTTP_201_CREATED)
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -258,6 +321,10 @@ class AccountAPI(APIView):
     def post(self, request, format=None):
         serializer = self.get_serializer_class('POST')(data=request.data)
         if serializer.is_valid():
+            if Account.objects.filter(
+                ref=serializer.validated_data.get('ref'),
+            ).exists():
+                return Response({"status": "Account with the same refference has been created"}, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -268,6 +335,10 @@ class AccountAPI(APIView):
             account = get_object_or_404(Account, id=account_id)
             serializer = self.get_serializer_class('PUT')(account, data=request.data)
             if serializer.is_valid():
+                if Account.objects.filter(
+                    ref=serializer.validated_data.get('ref'),
+                ).exists():
+                    return Response({"status": "Account with the same refference has been created"}, status=status.HTTP_400_BAD_REQUEST)
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -279,6 +350,10 @@ class AccountAPI(APIView):
             account = get_object_or_404(Account, id=account_id)
             serializer = self.get_serializer_class('PATCH')(account, data=request.data, partial=True)
             if serializer.is_valid():
+                if Account.objects.filter(
+                    ref=serializer.validated_data.get('ref'),
+                ).exists():
+                    return Response({"status": "Account with the same refference has been created"}, status=status.HTTP_400_BAD_REQUEST)
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

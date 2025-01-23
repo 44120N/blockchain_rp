@@ -105,7 +105,7 @@ export default function GeneralJournal() {
             return response.data
         })
         .then(()=>{
-            window.location.reload(false);
+            window.location.reload();
         })
         .catch(error => {
             console.error("Error deleting data:", error.response?.data || error.message);
