@@ -1,5 +1,5 @@
 import React from "react";
-import { TextField, InputAdornment, OutlinedInput } from "@mui/material";
+import { TextField, InputAdornment } from "@mui/material";
 
 const addThousandSeparator = (value) => {
     const parts = value.toString().split('.');
@@ -37,9 +37,11 @@ export default function CustomInputNumber(props) {
             maxRows={props.rows}
             helperText={props.helperText}
             color={props.color}
-            InputProps={{
-                startAdornment: (<InputAdornment position="start">{props.prefix}</InputAdornment>),
-                endAdornment: (<InputAdornment position="end">{props.unit}</InputAdornment>)
+            slotProps={{
+                input: {
+                    startAdornment: (<InputAdornment position="start">{props.prefix}</InputAdornment>),
+                    endAdornment: (<InputAdornment position="end">{props.unit}</InputAdornment>)
+                }
             }}
             fullWidth={props.fullWidth}
         />) :

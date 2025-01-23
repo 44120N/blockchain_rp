@@ -121,6 +121,7 @@ class BlockHeader(models.Model):
         while True:
             self.block_hash = self.compute_block_hash()
             if int(self.block_hash, 16) < target_bytes:
+                self.nonce = int(self.nonce, 16)
                 break
             self.nonce = int(self.nonce, 16) + 1 if isinstance(self.nonce, str) else self.nonce + 1
             if self.nonce > 0xFFFFFFFF:

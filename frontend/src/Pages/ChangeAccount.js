@@ -6,6 +6,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { Container, Stack, Typography, TextField, Button, FormControl, MenuItem, Select, OutlinedInput, InputLabel } from "@mui/material";
 import axios from "axios";
 import SelectField from "../Components/SelectField";
+import CustomInputNumber from "../Components/CustomInputNumber";
 
 export function AddAccount() {
     const redirect = useNavigate();
@@ -75,8 +76,7 @@ export function AddAccount() {
                             </Stack>
                         </Typography>
                         <Stack>
-                            <TextField label="Refference" value={ref}
-                                onChange={(e) => setRef(e.target.value)} required />
+                            <CustomInputNumber name="Refference" label="Refference" var={ref} setVar={setAccount} required />
                         </Stack>
                         <Stack>
                             <TextField label="Account Name" value={account}
@@ -204,8 +204,7 @@ export function UpdateAccount() {
                             </Stack>
                         </Typography>
                         <Stack>
-                            <TextField label="Refference" value={ref}
-                                onChange={(e) => setRef(e.target.value)} required />
+                            <CustomInputNumber name="Refference" label="Refference" var={ref} setVar={setAccount} required />
                         </Stack>
                         <Stack>
                             <TextField label="Account Name" value={account}
