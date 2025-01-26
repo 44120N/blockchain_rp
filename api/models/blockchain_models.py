@@ -61,29 +61,17 @@ class BlockHeader(models.Model):
             raise ValidationError("Version must be at least 0x20000000 to be valid.")
 
     def _header_data(self) -> bytes:
-        if isinstance(self.version, int):
-            self.version = natural_byte_order_to_str(int_to_little_endian(self.version))
-        if isinstance(self.bits, int):
-            self.bits = natural_byte_order_to_str(int_to_little_endian(self.bits))
-        if isinstance(self.nonce, int):
-            self.nonce = natural_byte_order_to_str(int_to_little_endian(self.nonce))
-        if isinstance(self.previous_hash, str):
-            self.previous_hash = natural_byte_order_to_str(str_to_natural_byte_order(self.previous_hash))
-        if isinstance(self.merkle_root, str):
-            self.merkle_root = natural_byte_order_to_str(str_to_natural_byte_order(self.merkle_root))
-        
         return (
-            str_to_natural_byte_order(self.version) +
-            str_to_natural_byte_order(self.previous_hash) +
-            str_to_natural_byte_order(self.merkle_root) +
+            str_to_natural_byte_order(self.version)[::-1] +
+            str_to_natural_byte_order(self.previous_hash)[::-1] +
+            str_to_natural_byte_order(self.merkle_root)[::-1] +
             int_to_little_endian(self.timestamp) +
-            str_to_natural_byte_order(self.bits) +
-            int_to_little_endian(self.nonce)
-        )
+            str_to_natural_byte_order(self.bits)[::-1]
+        )[::-1]
     
     def compute_block_hash(self) -> str:
         """Compute the block hash as the double SHA-256 of the header."""
-        header = self._header_data()
+        header = self._header_data() + int_to_little_endian(self.nonce)
         hash1 = sha256(header)
         hash2 = sha256(hash1)
         return natural_byte_order_to_str(hash2)
@@ -117,20 +105,20 @@ class BlockHeader(models.Model):
     
     def mine(self, target):
         """Mine the block by finding a nonce that produces a hash below the target."""
-        target_bytes = int.from_bytes(target, byteorder="little")
         while True:
             self.block_hash = self.compute_block_hash()
-            if int(self.block_hash, 16) < target_bytes:
-                self.nonce = int(self.nonce, 16)
+            print(self.nonce, ':', self.block_hash)
+            if int(self.block_hash, 16) < int(target, 16):
                 break
-            self.nonce = int(self.nonce, 16) + 1 if isinstance(self.nonce, str) else self.nonce + 1
+            self.nonce += 1
             if self.nonce > 0xFFFFFFFF:
-                raise ValueError("Nonce overflow: No valid hash found.")
+                self.timestamp = int(datetime.now())
+                self.nonce = 0
         self.save()
 
 class Blockchain(models.Model):
     id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
-    target = models.TextField(default="00000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+    target = models.TextField(default="0ffff00000000000000000000000000000000000000000000000000000000000")
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):

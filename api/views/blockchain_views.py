@@ -9,10 +9,9 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 
-
 from ..models import BlockHeader, Block, Blockchain, ChainUser, GeneralJournal, Transaction, TransactionLine, Account
 from ..serializers import *
-import json
+import json, time
 
 # Create your views here.
 def mine_block(blockchain: Blockchain, journal: GeneralJournal) -> Block:
@@ -26,6 +25,9 @@ def mine_block(blockchain: Blockchain, journal: GeneralJournal) -> Block:
     Returns:
         Block: The mined block.
     """
+    blockchain.target="000ffff000000000000000000000000000000000000000000000000000000000"
+    blockchain.save()
+    t_0 = time.time()
     if not journal.transactions:
         raise ValueError("The GeneralJournal must contain at least one transaction.")
     
@@ -44,18 +46,13 @@ def mine_block(blockchain: Blockchain, journal: GeneralJournal) -> Block:
         header=block_header
     )
     new_block.set_general_journal(journal)
-    new_block.header.mine(full_target)
+    new_block.header.mine(blockchain.target)
     new_block.save()
+    t_1 = time.time()
+    dt = t_1 - t_0
+    print(dt)
+    
     return new_block
-
-# @receiver(post_save, sender=Transaction)
-# @receiver(post_delete, sender=Transaction)
-# @receiver(post_save, sender=GeneralJournal)
-# @receiver(post_delete, sender=GeneralJournal)
-# def auto_mine_block(sender, instance, **kwargs):
-#     blockchain = instance.journal.blockchain if hasattr(instance, 'journal') else instance.blockchain
-#     if blockchain and instance.transactions.exists():
-#         mine_block(blockchain, instance)
 
 class MineAPI(APIView):
     permission_classes = [IsAuthenticated]

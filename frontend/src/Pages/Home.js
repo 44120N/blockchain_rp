@@ -15,6 +15,7 @@ import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
 import LinkIcon from '@mui/icons-material/Link';
 import KeyIcon from '@mui/icons-material/Key';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
+import axios from "axios";
 
 export default function Home() {
     const [username, setUsername] = useState('');
@@ -23,8 +24,8 @@ export default function Home() {
     const [publicKey, setPublicKey] = useState('');
     const [blockchain, setBlockchain] = useState('');
 
+    const loginData = getData('login_data');
     useEffect(() => {
-        const loginData = getData('login_data');
         if (loginData) {
             setUsername(loginData.username);
             setEmail(loginData.email);
@@ -34,7 +35,29 @@ export default function Home() {
         }
     }, []);
 
+    const getCookie = (name) => {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
     function handleLogout() {
+        const csrftoken = getCookie('csrftoken');
+        axios.post('/api/logout/', loginData, {
+            headers: {
+                'X-CSRFTOKEN': csrftoken,
+                "Content-Type": "multipart/form-data",
+            },
+        })
         localStorage.removeItem('login_data');
         window.location.reload();
     }

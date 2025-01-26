@@ -2,6 +2,22 @@ import CryptoJS from "crypto-js";
 
 const secretKey = "0a974821b5a09001cd08563f8a586067fe21248115d726a42910ca097fbb35ca";
 
+import axios from "axios";
+const getCookie = (name) => {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 function generateIV() {
     return CryptoJS.lib.WordArray.random(16);
 }
@@ -46,7 +62,15 @@ export function getData(data_key) {
         const now = new Date().getTime();
 
         if (now > data.expiry) {
-            console.log("Data has expired");
+            if (data_key === 'login_data') {
+                const csrftoken = getCookie('csrftoken');
+                axios.post('/api/logout/', decryptedData, {
+                    headers: {
+                        'X-CSRFTOKEN': csrftoken,
+                        "Content-Type": "multipart/form-data",
+                    },
+                })
+            } 
             localStorage.removeItem(data_key);
             return null;
         }
