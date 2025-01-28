@@ -25,8 +25,8 @@ def mine_block(blockchain: Blockchain, journal: GeneralJournal) -> Block:
     Returns:
         Block: The mined block.
     """
-    blockchain.target="000ffff000000000000000000000000000000000000000000000000000000000"
-    blockchain.save()
+    # blockchain.target="0ffff00000000000000000000000000000000000000000000000000000000000"
+    # blockchain.save()
     t_0 = time.time()
     if not journal.transactions:
         raise ValueError("The GeneralJournal must contain at least one transaction.")
