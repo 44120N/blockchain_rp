@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Button, Stack, Typography } from "@mui/material";
-import InstagramIcon from '@mui/icons-material/Instagram';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import ColorPalette from "../Components/ColorPalette";
 import Wave from 'react-wavify';
 
@@ -25,26 +25,26 @@ export default function Footer() {
                         <Typography id={'social'} variant="h4" color={"secondary"} textAlign={"center"}>OUR SOCIAL MEDIA</Typography>
                     </Stack>
                     <Stack className="col" direction={"row"} justifyContent={"center"} alignItems={"center"}>
-                        <Button 
-                            sx={{
-                                borderRadius: '50%', 
-                                height: '7vh',
-                                minWidth: 0,
-                                aspectRatio: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }} 
-                            variant="contained" color={"secondary"}
-                        >
-                            <a to={"https://www.instagram.com/canisiuscanvas"} target="_blank" style={{ color: 'white' }}>
-                                <InstagramIcon/>
-                            </a>
-                        </Button>
+                        <a href={"https://github.com/44120N"} target="_blank" style={{ color: 'white' }}>
+                            <Button 
+                                sx={{
+                                    borderRadius: '50%', 
+                                    height: '7vh',
+                                    minWidth: 0,
+                                    aspectRatio: 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }} 
+                                variant="contained" color={"secondary"}
+                            >
+                                <GitHubIcon/>
+                            </Button>
+                        </a>
                     </Stack>
                     <Stack className="col">
                         <Typography variant="body2" textAlign={"center"} color={"secondary"}>
-                            Copyright © 2024, Canisius College. All rights reserved.
+                            Copyright © 2025, Canisius College Research Paper. All rights reserved.
                         </Typography>
                     </Stack>
                 </Stack>

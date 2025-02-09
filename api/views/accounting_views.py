@@ -5,7 +5,7 @@ from rest_framework.parsers import MultiPartParser
 import json
 
 from django.shortcuts import get_object_or_404
-from ..models import GeneralJournal, Transaction, TransactionLine, Account
+from ..models import GeneralJournal, Transaction, TransactionLine, Account, Blockchain
 from ..serializers import (
     GeneralJournalSerializer, TransactionSerializer, TransactionLineSerializer, AccountSerializer,
     GeneralJournalFormSerializer, TransactionFormSerializer, TransactionLineFormSerializer, AccountFormSerializer
@@ -24,6 +24,7 @@ class GeneralJournalAPI(APIView):
         return GeneralJournalSerializer
     
     def get(self, request, format=None):
+        user = request.user.chain_user
         journal_id = request.GET.get(self.lookup_url_kwarg)
         if journal_id:
             journal = get_object_or_404(GeneralJournal, id=journal_id, is_deleted=False)
@@ -45,9 +46,10 @@ class GeneralJournalAPI(APIView):
                 return Response({"status": "General Journal with the same credentials has been created"}, status=status.HTTP_400_BAD_REQUEST)
             journal = serializer.save()
             
-            blockchain = request.user.chain_user.blockchain
+            blockchain:Blockchain = request.user.chain_user.blockchain
             if not blockchain:
                 return Response({"error": "No blockchain associated with this user. Please create a blockchain first."}, status=400)
+            blockchain.create_genesis_block(journal)
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

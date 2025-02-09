@@ -34,7 +34,7 @@ def mine_block(blockchain: Blockchain, journal: GeneralJournal) -> Block:
     full_target = int(blockchain.target, 16).to_bytes(32, byteorder="big")
     block_header = BlockHeader()
     
-    previous_block = blockchain.blocks.last()
+    previous_block = blockchain.get_chain().last()
     if previous_block:
         block_header.previous_hash = previous_block.header.block_hash
     block_header.bits = BlockHeader.target_to_bits(full_target)

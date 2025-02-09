@@ -15,6 +15,7 @@ DEFAULT_HASH = b'\x00'*32
 
 # Models
 class BlockHeader(models.Model):
+    id = models.UUIDField(primary_key=True, editable=False, default=uuid.uuid4)
     timestamp = models.IntegerField(null=True)
     version = models.TextField(
         null=False, blank=False, 
@@ -41,7 +42,7 @@ class BlockHeader(models.Model):
         null=False, blank=False
     )
     block_hash = models.TextField(
-        primary_key=True, default=natural_byte_order_to_str(DEFAULT_HASH), 
+        default=natural_byte_order_to_str(DEFAULT_HASH), 
         null=False, blank=False
     )
     
@@ -132,7 +133,7 @@ class Blockchain(models.Model):
         """Validate the blockchain by checking hashes and connections."""
         chain:List[Block] = self.get_chain()
         previous_hash = natural_byte_order_to_str(DEFAULT_HASH)
-        for index, block in enumerate(chain):
+        for id, block in enumerate(chain[1:]):
             if not block.header.is_valid():
                 raise ValueError(f"Block {block.height} failed header validation.")
             if block.header.previous_hash != previous_hash:
@@ -144,7 +145,7 @@ class Blockchain(models.Model):
             previous_hash = block.header.block_hash
         return True
     
-    def create_genesis_block(self):
+    def create_genesis_block(self, journal:GeneralJournal):
         """Initialize the blockchain with a genesis block."""
         genesis_header = BlockHeader(
             version="01000000",
@@ -155,6 +156,7 @@ class Blockchain(models.Model):
             nonce=0
         )
         genesis_header.save()
+        genesis_header.mine(self.target)
 
         genesis_block = Block(
             blockchain=self,
@@ -163,6 +165,7 @@ class Blockchain(models.Model):
             data=json.dumps({"message": "Genesis Block"})
         )
         genesis_block.save()
+        genesis_block.set_general_journal(journal)
 
 class Block(models.Model):
     id = models.CharField(max_length=255, primary_key=True, editable=False)
@@ -178,11 +181,10 @@ class Block(models.Model):
     def set_general_journal(self, journal: GeneralJournal):
         """Serialize GeneralJournal's transactions and compute Merkle Root."""
         transactions = journal.transactions.all()
-        if not transactions and not journal.is_deleted:
-            raise ValueError("GeneralJournal must have at least one transaction.")
         
         txids = [tx.txid for tx in transactions]
-        self.header.merkle_root = compute_merkle_root(txids)
+        if txids:
+            self.header.merkle_root = compute_merkle_root(txids)
         
         transaction_data = {
             "action": "delete" if journal.is_deleted else "modify",
@@ -250,11 +252,9 @@ class ChainUser(models.Model):
     def sign_transaction(private_key_hex: str, transaction_data: str) -> str:
         """
         Signs the transaction data using the private key.
-
         Args:
             private_key_hex (str): The user's private key in hexadecimal.
             transaction_data (str): The data to sign (typically a serialized transaction).
-
         Returns:
             str: The signature in hexadecimal.
         """
